@@ -44,7 +44,11 @@ export class WhatsAppService {
     this.startPromise = null
     this.version = null
     this.qrWaiters = new Set()
-    this.queue = new PQueue({ concurrency: 3, interval: 1000, intervalCap: 10 })
+    // anti-ban: one message at a time, MESSAGE_DELAY_MS gap between sends
+    const gap = cfg.messageDelayMs ?? 5500
+    this.queue = gap > 0
+      ? new PQueue({ concurrency: 1, interval: gap, intervalCap: 1 })
+      : new PQueue({ concurrency: 1 })
   }
 
   async start() {
@@ -214,6 +218,7 @@ export class WhatsAppService {
       qrAvailable: Boolean(this.getQr()),
       qrExpiresAt: this.getQr()?.expiresAt || null,
       reconnectAttempts: this.reconnectAttempts,
+      pendingMessages: this.queue.size + this.queue.pending,
       lastError: this.lastError
     }
   }
@@ -242,22 +247,9 @@ export class WhatsAppService {
     await this.ensureConnected()
     const recipient = await this.resolveRecipient(to)
     const record = this.messages.create({ recipient, type, payload, apiKeyId })
+    const queuedBehind = this.queue.size + this.queue.pending
 
-    try {
-      return await this.queue.add(async () => {
-        await this.ensureConnected()
-        const result = await this.socket.sendMessage(recipient, content)
-        if (!result?.key?.id) throw new Error('WhatsApp did not return a message ID')
-        const sent = this.messages.markSent(record.id, result)
-        this.logs.write('info', 'message', 'message sent', {
-          messageId: record.id,
-          waMessageId: sent.waMessageId,
-          recipient: this.maskUser(recipient),
-          type
-        }, { apiKeyId })
-        return { ...sent, recipient, type }
-      })
-    } catch (error) {
+    const markFailed = error => {
       this.messages.markFailed(record.id, error.message)
       this.logs.write('error', 'message', 'message send failed', {
         messageId: record.id,
@@ -265,8 +257,40 @@ export class WhatsAppService {
         type,
         error: error.message
       }, { apiKeyId })
-      throw error
     }
+
+    const task = this.queue.add(async () => {
+      await this.ensureConnected()
+      const result = await this.socket.sendMessage(recipient, content)
+      if (!result?.key?.id) throw new Error('WhatsApp did not return a message ID')
+      const sent = this.messages.markSent(record.id, result)
+      this.logs.write('info', 'message', 'message sent', {
+        messageId: record.id,
+        waMessageId: sent.waMessageId,
+        recipient: this.maskUser(recipient),
+        type
+      }, { apiKeyId })
+      return { ...sent, recipient, type }
+    })
+
+    // bulk requests would outwait the HTTP timeout behind the anti-ban gap;
+    // wait briefly, then hand back "queued" and let it send in the background
+    let timer
+    const winner = await Promise.race([
+      task.then(result => ({ result }), error => ({ error })),
+      new Promise(resolve => { timer = setTimeout(() => resolve(null), 15000); timer.unref?.() })
+    ])
+    clearTimeout(timer)
+
+    if (!winner) {
+      task.then(() => {}, markFailed)
+      return { id: record.id, status: 'queued', recipient, type, queuedBehind }
+    }
+    if (winner.error) {
+      markFailed(winner.error)
+      throw winner.error
+    }
+    return winner.result
   }
 
   async logout() {

@@ -72,7 +72,7 @@
   }
   .nav-btn:hover { background: rgba(255,255,255,.22); }
 
-  main { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 26px 18px 40px; }
+  main { flex: 1; width: 100%; margin: 0 auto; padding: 26px 24px 40px; }
 
   .card {
     background: #fff; border: 1px solid var(--line);
@@ -341,6 +341,7 @@
           <h3>WhatsApp Connected</h3>
           <div class="acct"><i class="fa-solid fa-mobile-screen"></i> <span id="connUser">—</span></div>
           <div class="since" id="connSince"></div>
+          <div class="since hidden" id="queueInfo" style="color:var(--amber);font-weight:600"></div>
           <div class="badge-row">
             <span class="badge live"><i class="fa-solid fa-tower-broadcast"></i> API LIVE</span>
             <span class="badge send-only"><i class="fa-solid fa-paper-plane"></i> SEND-ONLY MODE &middot; incoming messages ignored</span>
@@ -556,6 +557,9 @@
       setPill('connected', 'Connected');
       $('connUser').textContent = status.user || 'linked device';
       $('connSince').textContent = status.connectedAt ? 'connected since ' + new Date(status.connectedAt).toLocaleString() : '';
+      const pending = status.pendingMessages || 0;
+      $('queueInfo').classList.toggle('hidden', !pending);
+      $('queueInfo').innerHTML = pending ? '<i class="fa-solid fa-hourglass-half"></i> ' + pending + ' message(s) in queue — sending one every few seconds (anti-ban)' : '';
       show($('apiSection'));
       if (!apiBuilt) buildApiSection();
       return;
@@ -676,17 +680,34 @@
     apiBuilt = true;
   };
 
+  // copy that also works on plain http (clipboard API needs https)
+  const copyText = async text => {
+    try { await navigator.clipboard.writeText(text); return true; } catch { /* http or denied */ }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+      const okay = document.execCommand('copy');
+      ta.remove();
+      return okay;
+    } catch { return false; }
+  };
+  const flashCopied = (btn, okay) => {
+    const old = btn.innerHTML;
+    btn.innerHTML = okay ? '<i class="fa-solid fa-check"></i> Copied' : '<i class="fa-solid fa-xmark"></i> Failed';
+    setTimeout(() => { btn.innerHTML = old; }, 1400);
+  };
+
   // copy buttons (delegated)
   document.addEventListener('click', async e => {
     const btn = e.target.closest('.copy-mini');
-    if (!btn) return;
+    if (!btn || btn.id === 'revealKeyBtn' || btn.id === 'copyCurKey') return;
     const text = btn.dataset.copyEl ? $(btn.dataset.copyEl).textContent : btn.dataset.copy;
-    try {
-      await navigator.clipboard.writeText(text);
-      const old = btn.innerHTML;
-      btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
-      setTimeout(() => { btn.innerHTML = old; }, 1400);
-    } catch { /* clipboard blocked on http — select manually */ }
+    if (!text) return;
+    flashCopied(btn, await copyText(text));
   });
 
   // ---- test send ----
@@ -710,7 +731,9 @@
       alertBox.classList.add('show', okay ? 'okay' : 'error');
       $('sendAlertIcon').className = okay ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-exclamation';
       $('sendAlertText').textContent = okay
-        ? 'Sent! WhatsApp message ID: ' + (json.data.waMessageId || json.data.id)
+        ? (json.data.status === 'queued'
+          ? 'Queued! Will send shortly (anti-ban gap of a few seconds between messages).'
+          : 'Sent! WhatsApp message ID: ' + (json.data.waMessageId || json.data.id))
         : (json.error || 'Send failed') + (json.details ? ' — ' + json.details.map(d => d.message).join(', ') : '');
       if (okay) $('testMsg').value = '';
     } catch (e) {
@@ -742,13 +765,7 @@
     $('curKeyVal').textContent = keyShown ? key : maskKey(key);
     $('revealKeyBtn').innerHTML = keyShown ? '<i class="fa-solid fa-eye-slash"></i>' : '<i class="fa-solid fa-eye"></i>';
   };
-  $('copyCurKey').onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(key);
-      $('copyCurKey').innerHTML = '<i class="fa-solid fa-check"></i> Copied';
-      setTimeout(() => { $('copyCurKey').innerHTML = '<i class="fa-regular fa-copy"></i> Copy'; }, 1400);
-    } catch { /* http clipboard blocked — reveal and copy manually */ }
-  };
+  $('copyCurKey').onclick = async () => flashCopied($('copyCurKey'), await copyText(key));
 
   $('genKeyRole').addEventListener('click', e => {
     const b = e.target.closest('button[data-r]');
