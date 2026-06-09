@@ -1,0 +1,14 @@
+# Developed by Mohammad Rameez Imdad (Rameez Scripts)
+# WhatsApp: https://wa.me/923224083545 (For Custom Projects)
+# YouTube: https://www.youtube.com/@rameezimdad (Subscribe for more!)
+
+/opt/baileys-api/logs/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    su root root
+    copytruncate
+}
