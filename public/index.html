@@ -230,6 +230,29 @@
   .test-grid { display: grid; grid-template-columns: 240px 1fr auto; gap: 12px; align-items: end; }
   .send-result { margin-top: 12px; }
 
+  /* api keys panel */
+  .key-current {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--navy); color: #7fd4ff;
+    font-family: Consolas, Menlo, monospace; font-size: 13.5px;
+    padding: 11px 14px; border-radius: 8px; word-break: break-all;
+  }
+  .key-current .kv { flex: 1; min-width: 180px; }
+  .role-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .role-toggle button { background: #fff; border: none; padding: 11px 18px; font-size: 14px; cursor: pointer; color: var(--ink); }
+  .role-toggle button.active { background: var(--blue); color: #fff; font-weight: 600; }
+  .gen-row { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: end; }
+  .key-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  .key-table th { text-align: left; padding: 9px 10px; background: var(--blue-soft); color: var(--navy); font-size: 12px; }
+  .key-table td { padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  .key-table code { font-size: 12px; color: var(--navy); }
+  .kbadge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+  .kbadge.ok { background: var(--green-soft); color: var(--green); }
+  .kbadge.rev { background: var(--red-soft); color: var(--red); }
+  .kbtn { border: none; border-radius: 5px; padding: 6px 11px; font-size: 12px; cursor: pointer; color: #fff; }
+  .kbtn.danger { background: var(--red); }
+  .kbtn.danger:hover { background: #a93226; }
+
   footer {
     background: var(--navy); color: rgba(255,255,255,.78);
     text-align: center; padding: 16px 14px; font-size: 12.5px; line-height: 1.9;
@@ -385,6 +408,46 @@
       </div>
 
     </div>
+
+    <div class="card" style="margin-top:22px" id="keysSection">
+      <div class="card-head"><i class="fa-solid fa-key"></i> API Keys <span class="right">use these in your apps</span></div>
+      <div class="card-body">
+
+        <div class="field" style="margin-bottom:18px">
+          <label><i class="fa-solid fa-id-badge"></i> Your current key <span id="curKeyName" style="color:var(--muted);font-weight:400"></span></label>
+          <div class="key-current">
+            <span class="kv" id="curKeyVal">&bull;&bull;&bull;&bull;&bull;&bull;</span>
+            <button class="copy-mini" id="revealKeyBtn" title="Show / hide"><i class="fa-solid fa-eye"></i></button>
+            <button class="copy-mini" id="copyCurKey"><i class="fa-regular fa-copy"></i> Copy</button>
+          </div>
+        </div>
+
+        <div id="adminKeys" class="hidden">
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--navy)"><i class="fa-solid fa-plus"></i> Generate a new key (one per app is best practice)</label>
+          <div class="gen-row">
+            <div class="field" style="margin:0">
+              <input type="text" id="genKeyName" placeholder="e.g. my-shop-app" maxlength="100">
+            </div>
+            <div class="role-toggle" id="genKeyRole" data-role="api">
+              <button type="button" data-r="api" class="active">api</button>
+              <button type="button" data-r="admin">admin</button>
+            </div>
+            <button class="btn" id="genKeyBtn"><i class="fa-solid fa-bolt"></i> Generate</button>
+          </div>
+          <div id="genResult"></div>
+
+          <label style="display:block;font-size:13px;font-weight:600;margin:20px 0 4px;color:var(--navy)"><i class="fa-solid fa-list"></i> All keys</label>
+          <div style="overflow-x:auto">
+            <table class="key-table">
+              <thead><tr><th>Name</th><th>Prefix</th><th>Role</th><th>Last used</th><th>Status</th><th></th></tr></thead>
+              <tbody id="keyTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </section>
 
 </main>
@@ -460,6 +523,7 @@
       hide($('gateView')); show($('connView')); show($('changeKeyBtn'));
       $('keyWho').innerHTML = '<i class="fa-solid fa-id-badge"></i> ' + (me.name || 'key') + ' &middot; ' + me.role;
       tick();
+      renderKeys();
     } catch {
       $('gateAlertText').textContent = 'Could not reach the server.';
       $('gateAlert').classList.add('show');
@@ -660,6 +724,89 @@
       btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send';
     }
   };
+
+  // ---- api keys panel ----
+  const maskKey = k => !k ? '••••••' : (k.length > 18 ? k.slice(0, 12) + '••••••••' + k.slice(-4) : '••••••');
+  let keyShown = false;
+
+  const renderKeys = () => {
+    $('curKeyName').textContent = me ? '· ' + (me.name || 'key') + ' · ' + me.role : '';
+    $('curKeyVal').textContent = keyShown ? key : maskKey(key);
+    const admin = me?.role === 'admin';
+    $('adminKeys').classList.toggle('hidden', !admin);
+    if (admin) loadKeyList();
+  };
+
+  $('revealKeyBtn').onclick = () => {
+    keyShown = !keyShown;
+    $('curKeyVal').textContent = keyShown ? key : maskKey(key);
+    $('revealKeyBtn').innerHTML = keyShown ? '<i class="fa-solid fa-eye-slash"></i>' : '<i class="fa-solid fa-eye"></i>';
+  };
+  $('copyCurKey').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(key);
+      $('copyCurKey').innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+      setTimeout(() => { $('copyCurKey').innerHTML = '<i class="fa-regular fa-copy"></i> Copy'; }, 1400);
+    } catch { /* http clipboard blocked — reveal and copy manually */ }
+  };
+
+  $('genKeyRole').addEventListener('click', e => {
+    const b = e.target.closest('button[data-r]');
+    if (!b) return;
+    $('genKeyRole').dataset.role = b.dataset.r;
+    [...$('genKeyRole').children].forEach(c => c.classList.toggle('active', c === b));
+  });
+
+  const loadKeyList = async () => {
+    try {
+      const { res, json } = await api('/api/admin/list-keys');
+      if (!res.ok) return;
+      const rows = json.data?.keys || [];
+      $('keyTableBody').innerHTML = rows.length ? rows.map(k => {
+        const dead = k.revoked_at || (k.expires_at && Date.parse(k.expires_at) < Date.now());
+        const status = k.revoked_at ? '<span class="kbadge rev">revoked</span>'
+          : (k.expires_at && Date.parse(k.expires_at) < Date.now()) ? '<span class="kbadge rev">expired</span>'
+          : '<span class="kbadge ok">active</span>';
+        const used = k.last_used_at ? new Date(k.last_used_at).toLocaleDateString() : '—';
+        const act = dead ? '' : '<button class="kbtn danger" data-revoke="' + k.prefix + '"><i class="fa-solid fa-ban"></i> Revoke</button>';
+        return '<tr><td>' + k.name + '</td><td><code>' + k.prefix + '</code></td><td>' + k.role + '</td><td>' + used + '</td><td>' + status + '</td><td>' + act + '</td></tr>';
+      }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">No keys generated yet</td></tr>';
+    } catch { /* not admin / network */ }
+  };
+
+  $('genKeyBtn').onclick = async () => {
+    const name = $('genKeyName').value.trim();
+    const role = $('genKeyRole').dataset.role;
+    if (name.length < 2) { alert('Enter a name (at least 2 characters).'); return; }
+    const btn = $('genKeyBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i>';
+    try {
+      const { res, json } = await api('/api/admin/generate-key', { method: 'POST', body: JSON.stringify({ name, role }) });
+      if (!res.ok) {
+        $('genResult').innerHTML = '<div class="alert error show"><i class="fa-solid fa-circle-exclamation"></i><span>' + (json.error || 'Failed to generate') + '</span></div>';
+        return;
+      }
+      const raw = json.data.apiKey;
+      const id = 'gk' + Math.random().toString(36).slice(2, 7);
+      $('genResult').innerHTML =
+        '<div class="alert okay show" style="display:block"><b><i class="fa-solid fa-circle-check"></i> Key for "' + json.data.name + '" created — copy it now, it is shown only once:</b>' +
+        '<div class="curl-wrap" style="margin-top:8px"><pre class="curl" id="' + id + '">' + raw + '</pre>' +
+        '<button class="copy-mini" data-copy-el="' + id + '"><i class="fa-regular fa-copy"></i> Copy</button></div></div>';
+      $('genKeyName').value = '';
+      loadKeyList();
+    } catch { /* AUTH handled in api() */ }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Generate'; }
+  };
+
+  // revoke (delegated)
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-revoke]');
+    if (!b) return;
+    if (!confirm('Revoke this key? Apps using it will stop working immediately.')) return;
+    try { await api('/api/admin/revoke-key', { method: 'POST', body: JSON.stringify({ id: b.dataset.revoke }) }); loadKeyList(); }
+    catch { /* AUTH handled in api() */ }
+  });
 
   // ---- boot ----
   show($('gateView'));
