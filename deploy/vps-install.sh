@@ -4,12 +4,24 @@
 # YouTube: https://www.youtube.com/@rameezimdad (Subscribe for more!)
 #
 # One-shot Baileys API installer for a fresh Ubuntu 22.04/24.04 VPS (run as root)
-# usage: bash vps-install.sh [github-token-if-repo-private]
+# usage: bash vps-install.sh [--fresh] [github-token-if-repo-private]
+#   --fresh = wipe any old install first (new admin key, new WhatsApp session)
 set -euo pipefail
 
 REPO="rameezimdad/baileys-api"
-TOKEN="${1:-}"
 APP_DIR=/opt/baileys-api
+FRESH=0
+TOKEN=""
+for arg in "$@"; do
+  if [ "$arg" = "--fresh" ]; then FRESH=1; else TOKEN="$arg"; fi
+done
+
+if [ "$FRESH" = 1 ]; then
+  echo ">>> [0/7] removing old install (--fresh)"
+  command -v pm2 >/dev/null 2>&1 && pm2 delete baileys-api >/dev/null 2>&1 || true
+  rm -rf "$APP_DIR" "$HOME/baileys-api"
+  rm -f /etc/nginx/sites-enabled/baileys-api /etc/nginx/sites-available/baileys-api
+fi
 
 echo ">>> [1/7] system packages"
 export DEBIAN_FRONTEND=noninteractive

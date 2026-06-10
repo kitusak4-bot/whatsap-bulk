@@ -4,108 +4,73 @@ Developed by Mohammad Rameez Imdad (Rameez Scripts)
 WhatsApp: https://wa.me/923224083545 (For Custom Projects)
 YouTube: https://www.youtube.com/@rameezimdad (Subscribe for more!)
 
-WhatsApp **send-only** REST API with a web dashboard. Scan a QR once, then send messages from any app with a simple HTTP call. Incoming messages are ignored (never read, never stored).
-
-> Use only for lawful, consent-based messaging. Messages go out one-by-one with a 5.5s anti-ban gap.
-
----
-
-## Install on a VPS (Ubuntu 22.04 / 24.04)
-
-> This repo is **private**. Before installing: on github.com open the repo → Settings → Danger Zone → **Change visibility → Public**. After install, set it back to **Private** the same way. (Token method: see [INSTALL.md](INSTALL.md))
-
-Open your VPS terminal (Hostinger hPanel → VPS → **Browser terminal**, login `root`).
-Paste commands **one at a time** — long pastes break in browser terminals.
-
-### Step 1 — Remove old install (skip on a brand-new VPS)
-
-```bash
-pm2 delete baileys-api
-```
-```bash
-rm -rf /opt/baileys-api ~/baileys-api
-```
-```bash
-rm -f /etc/nginx/sites-enabled/baileys-api /etc/nginx/sites-available/baileys-api
-```
-
-### Step 2 — Install (everything is automatic)
-
-```bash
-apt install -y git
-```
-```bash
-git clone https://github.com/rameezimdad/baileys-api.git
-```
-```bash
-bash baileys-api/deploy/vps-install.sh
-```
-
-Takes 3–5 minutes. At the end a green box prints:
-
-- `Dashboard: http://YOUR_VPS_IP/`
-- **ADMIN API KEY** → **copy and save it NOW** (shown only once)
-
-### Step 3 — Domain (optional, recommended)
-
-Cloudflare → add your domain → DNS: `A @ → YOUR_VPS_IP` and `A www → YOUR_VPS_IP`, both **Proxied (orange cloud)** → set the Cloudflare nameservers at your registrar.
-
-⚠️ **Important:** Cloudflare → **SSL/TLS → Overview → mode "Flexible"** — otherwise you get error 522 (the VPS itself has no SSL; Cloudflare provides it).
-
-Then on the VPS:
-
-```bash
-sed -i 's|^PUBLIC_DOMAIN=.*|PUBLIC_DOMAIN=yourdomain.com|' /opt/baileys-api/.env
-```
-```bash
-pm2 restart baileys-api --update-env
-```
-
-### Step 4 — Connect WhatsApp
-
-1. Open `https://yourdomain.com/` (or `http://YOUR_VPS_IP/`)
-2. Paste the ADMIN API KEY → Unlock
-3. Phone: WhatsApp → Settings → **Linked devices** → **Link a device** → scan the QR
-4. Connected ✅ — the page shows: test-send form, **API Keys panel** (create/copy/revoke keys), and ready-made API examples for your domain + VPS IP
+Send WhatsApp messages from any app with a simple HTTP call. Scan a QR once — done.
+**Send-only** (incoming messages are ignored) with a built-in **anti-ban queue** (5.5s gap between messages).
 
 ---
 
-## Send messages from your apps
+## ⚡ Install — 3 steps
+
+> Needs: a VPS with **Ubuntu 24.04** (or 22.04), logged in as `root`.
+> Repo note: make this repo **Public** on GitHub before installing, set back to **Private** after.
+
+**1.** Open the VPS terminal (Hostinger hPanel → your VPS → **Browser terminal**)
+
+**2.** Paste this and press Enter:
 
 ```bash
-curl -X POST https://yourdomain.com/api/send-message \
+curl -fsSLo i.sh https://raw.githubusercontent.com/rameezimdad/baileys-api/master/deploy/vps-install.sh && bash i.sh
+```
+
+**3.** Wait 3–5 min. It prints your **ADMIN API KEY** — copy and save it (shown only once).
+Open `http://YOUR_VPS_IP/` → paste the key → scan the QR with WhatsApp (**Settings → Linked devices → Link a device**).
+
+✅ That's it. The dashboard now shows a test-send form, an **API Keys** panel, and ready-made code examples.
+
+**Reinstall from zero** (new key + new QR): same command but `bash i.sh --fresh`
+
+---
+
+## 📤 Send a message
+
+```bash
+curl -X POST http://YOUR_VPS_IP/api/send-message \
   -H "X-API-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"to":"923001234567","message":"Hello"}'
 ```
 
-- Number = country code + number, **no `+`** (e.g. `923001234567`)
-- Endpoints: `/api/send-message`, `/api/send-image`, `/api/send-document`, `/api/send-audio` (multipart field `file`), `/api/send-location`
-- Bulk sends: extra messages return `"status":"queued"` instantly and go out automatically with the anti-ban gap
-- Create one key per app from the dashboard's **API Keys** panel (keep the admin key for yourself)
+- Number = country code + number, **no `+`**
+- Also: `/api/send-image`, `/api/send-document`, `/api/send-audio` (multipart field `file`), `/api/send-location`
+- Bulk? Fire away — extra messages reply `"status":"queued"` instantly and send automatically, safely spaced
+- Make one key per app from the dashboard's **API Keys** panel
 
-## Update the server to latest code
+## 🌐 Domain + HTTPS (optional)
 
-(Repo must be public for the moment of update, same as install)
+1. Cloudflare → add domain → DNS: `A @ → VPS_IP` and `A www → VPS_IP`, both **Proxied 🟠**
+2. Set Cloudflare's nameservers at your registrar
+3. ⚠️ Cloudflare → **SSL/TLS → Overview → "Flexible"** (otherwise error 522)
+4. On the VPS:
 
 ```bash
-curl -fsSL https://codeload.github.com/rameezimdad/baileys-api/tar.gz/master | tar xz --strip-components=1 -C /opt/baileys-api
+sed -i 's|^PUBLIC_DOMAIN=.*|PUBLIC_DOMAIN=yourdomain.com|' /opt/baileys-api/.env && pm2 restart baileys-api --update-env
 ```
+
+## 🔄 Update to latest code
+
 ```bash
-pm2 restart baileys-api --update-env
+bash i.sh
 ```
 
-Your `.env`, WhatsApp session, and keys are preserved.
+(Same installer — it keeps your `.env`, API keys, and WhatsApp session. Repo must be Public for the moment.)
 
-## Daily commands
+## 🛠️ Daily commands
 
 | What | Command |
 |------|---------|
-| Status | `pm2 status` |
-| Logs | `pm2 logs baileys-api` |
+| Status / logs | `pm2 status` · `pm2 logs baileys-api` |
 | Restart | `pm2 restart baileys-api` |
-| Health | `curl http://127.0.0.1:3000/healthz` |
 | Forgot admin key | `grep ADMIN_API_KEY /opt/baileys-api/.env` |
-| Change message gap | edit `MESSAGE_DELAY_MS` in `/opt/baileys-api/.env`, then restart |
+| Message gap | `MESSAGE_DELAY_MS` in `/opt/baileys-api/.env` (then restart) |
 
-Full step-by-step manual install, SSL via certbot, and troubleshooting: **[INSTALL.md](INSTALL.md)**
+Detailed manual install & troubleshooting: **[INSTALL.md](INSTALL.md)**
