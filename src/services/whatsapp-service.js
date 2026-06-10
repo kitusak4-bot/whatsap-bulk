@@ -8,21 +8,14 @@ import makeWASocket, {
   Browsers,
   DisconnectReason,
   fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore,
-  proto
+  makeCacheableSignalKeyStore
 } from 'baileys'
 import PQueue from 'p-queue'
 import { AppError } from '../utils/errors.js'
 import { normalizeRecipient } from '../utils/recipient.js'
 
-const deliveryStatus = {
-  [proto.WebMessageInfo.Status.ERROR]: 'failed',
-  [proto.WebMessageInfo.Status.PENDING]: 'queued',
-  [proto.WebMessageInfo.Status.SERVER_ACK]: 'sent',
-  [proto.WebMessageInfo.Status.DELIVERY_ACK]: 'delivered',
-  [proto.WebMessageInfo.Status.READ]: 'read',
-  [proto.WebMessageInfo.Status.PLAYED]: 'read'
-}
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+const randBetween = (min, max) => max > min ? min + Math.floor(Math.random() * (max - min + 1)) : min
 
 export class WhatsAppService {
   constructor({ authStore, messages, logs, logger, cfg }) {
@@ -47,6 +40,7 @@ export class WhatsAppService {
     // anti-ban: one msg at a time, random human-like gap between sends (default 5-9s)
     this.queue = new PQueue({ concurrency: 1 })
     this.nextSendAt = 0
+    this.sentInBurst = 0
   }
 
   async start() {
@@ -107,10 +101,7 @@ export class WhatsAppService {
     })
     socket.ev.on('connection.update', update => this.onConnectionUpdate(update, generation))
     socket.ev.on('messages.upsert', () => {}) // send-only: inbound dropped, never stored
-    socket.ev.on('messages.update', updates => this.onMessageUpdates(updates))
-    socket.ev.on('message-receipt.update', receipts => {
-      this.logs.write('debug', 'message', 'message receipt update', { count: receipts.length })
-    })
+    // fire-and-forget: delivery/read receipts are NOT tracked — send and move on
   }
 
   onConnectionUpdate(update, generation) {
@@ -158,15 +149,6 @@ export class WhatsAppService {
     this.scheduleReconnect(false)
   }
 
-  onMessageUpdates(updates) {
-    for (const { key, update } of updates) {
-      const status = deliveryStatus[update.status]
-      if (!key.id || !status) continue
-      const changed = this.messages.updateDelivery(key.id, status)
-      if (changed) this.logs.write('info', 'message', 'message delivery updated', { waMessageId: key.id, status })
-    }
-  }
-
   scheduleReconnect(fresh) {
     if (this.stopped || this.reconnectTimer) return
     this.status = fresh ? 'connecting' : 'reconnecting'
@@ -208,9 +190,36 @@ export class WhatsAppService {
   }
 
   sendGapMs() {
-    const min = this.cfg.messageDelayMinMs ?? 5000
-    const max = this.cfg.messageDelayMaxMs ?? 9000
-    return max > min ? min + Math.floor(Math.random() * (max - min + 1)) : min
+    return randBetween(this.cfg.messageDelayMinMs ?? 5000, this.cfg.messageDelayMaxMs ?? 9000)
+  }
+
+  // every BURST_SIZE messages take a longer breather, like a human would
+  burstPauseMs() {
+    const size = this.cfg.burstSize ?? 0
+    if (!size || ++this.sentInBurst < size) return 0
+    this.sentInBurst = 0
+    const pause = randBetween(this.cfg.burstPauseMinMs ?? 30000, this.cfg.burstPauseMaxMs ?? 60000)
+    this.logs.write('info', 'whatsapp', 'anti-ban burst cool-down', { pauseMs: pause, afterMessages: size })
+    return pause
+  }
+
+  // show "typing…" briefly before sending, scaled to message length
+  async simulateTyping(jid, content) {
+    if (!this.cfg.typingSimulation) return
+    try {
+      await this.socket.sendPresenceUpdate('composing', jid)
+      const len = (content.text || content.caption || '').length
+      await sleep(Math.min(randBetween(900, 1800) + len * 25, 4000))
+      await this.socket.sendPresenceUpdate('paused', jid)
+    } catch { /* presence is best-effort */ }
+  }
+
+  todayStartIso() {
+    return new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z'
+  }
+
+  sentToday() {
+    return this.messages.countSince(this.todayStartIso())
   }
 
   getStatus() {
@@ -224,6 +233,8 @@ export class WhatsAppService {
       reconnectAttempts: this.reconnectAttempts,
       pendingMessages: this.queue.size + this.queue.pending,
       queueGapMs: { min: this.cfg.messageDelayMinMs ?? 5000, max: this.cfg.messageDelayMaxMs ?? 9000 },
+      sentToday: this.sentToday(),
+      dailyLimit: this.cfg.dailySendLimit ?? 0,
       lastError: this.lastError
     }
   }
@@ -250,6 +261,10 @@ export class WhatsAppService {
 
   async send({ to, type, content, payload, apiKeyId }) {
     await this.ensureConnected()
+    const limit = this.cfg.dailySendLimit ?? 0
+    if (limit > 0 && this.sentToday() >= limit) {
+      throw new AppError(429, 'DAILY_LIMIT_REACHED', `Daily send limit (${limit}) reached — protects the number from bans; resets at midnight UTC. Raise DAILY_SEND_LIMIT in .env if needed.`)
+    }
     const recipient = await this.resolveRecipient(to)
     const record = this.messages.create({ recipient, type, payload, apiKeyId })
     const queuedBehind = this.queue.size + this.queue.pending
@@ -266,10 +281,11 @@ export class WhatsAppService {
 
     const task = this.queue.add(async () => {
       const wait = this.nextSendAt - Date.now()
-      if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait))
+      if (wait > 0) await sleep(wait)
       await this.ensureConnected()
+      await this.simulateTyping(recipient, content)
       const result = await this.socket.sendMessage(recipient, content)
-      this.nextSendAt = Date.now() + this.sendGapMs()
+      this.nextSendAt = Date.now() + this.sendGapMs() + this.burstPauseMs()
       if (!result?.key?.id) throw new Error('WhatsApp did not return a message ID')
       const sent = this.messages.markSent(record.id, result)
       this.logs.write('info', 'message', 'message sent', {

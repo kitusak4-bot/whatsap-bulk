@@ -21,11 +21,8 @@ export class MessageRepository {
     this.failed = db.prepare(`
       UPDATE messages SET status = 'failed', error = ?, updated_at = ? WHERE id = ?
     `)
-    this.delivery = db.prepare(`
-      UPDATE messages SET status = ?, updated_at = ?
-      WHERE wa_message_id = ? AND status != 'failed'
-    `)
     this.findMessage = db.prepare('SELECT message_json FROM messages WHERE wa_message_id = ?')
+    this.sinceCount = db.prepare(`SELECT COUNT(*) AS n FROM messages WHERE created_at >= ? AND status != 'failed'`)
 
     // queue page: queued drains FIFO (ASC), history newest first (DESC)
     const COLS = 'id, wa_message_id, recipient, type, payload_json, status, error, api_key_id, created_at, updated_at'
@@ -91,8 +88,8 @@ export class MessageRepository {
     this.failed.run(String(error).slice(0, 1000), new Date().toISOString(), id)
   }
 
-  updateDelivery(waMessageId, status) {
-    return this.delivery.run(status, new Date().toISOString(), waMessageId).changes > 0
+  countSince(iso) {
+    return this.sinceCount.get(iso)?.n || 0
   }
 
   getContent(waMessageId) {

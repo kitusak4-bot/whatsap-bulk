@@ -506,7 +506,7 @@
           <div class="small-box sb-amber">
             <div class="inner"><h3 id="kpiQueue">0</h3><p>Messages in Queue</p></div>
             <i class="fa-solid fa-hourglass-half icon"></i>
-            <span class="foot">sent one-by-one, anti-ban</span>
+            <span class="foot" id="kpiQueueFoot">sent one-by-one, anti-ban</span>
           </div>
           <div class="small-box sb-blue">
             <div class="inner"><h3 id="kpiGap">5–9s</h3><p>Anti-Ban Gap</p></div>
@@ -607,12 +607,11 @@
               <button class="active" data-status=""><i class="fa-solid fa-list"></i> All <span class="n" id="qcAll">0</span></button>
               <button data-status="queued"><i class="fa-solid fa-hourglass-half"></i> Queued <span class="n" id="qcQueued">0</span></button>
               <button data-status="sent"><i class="fa-solid fa-paper-plane"></i> Sent <span class="n" id="qcSent">0</span></button>
-              <button data-status="delivered"><i class="fa-solid fa-check-double"></i> Delivered <span class="n" id="qcDelivered">0</span></button>
-              <button data-status="read"><i class="fa-solid fa-eye"></i> Read <span class="n" id="qcRead">0</span></button>
               <button data-status="failed"><i class="fa-solid fa-circle-xmark"></i> Failed <span class="n" id="qcFailed">0</span></button>
             </div>
             <div class="note-strip warn" style="margin-bottom:14px"><i class="fa-solid fa-shield-halved"></i><div>
-              Queued messages drain <b>one-by-one with a random 5–9s gap</b> (anti-ban). Top of the queued list sends next.
+              Queued messages drain <b>one-by-one with a random 5–9s gap</b> + typing simulation (anti-ban). Top of the queued list sends next.
+              Fire-and-forget: the server only sends — it does <b>not</b> track delivered/seen receipts.
             </div></div>
             <div style="overflow-x:auto">
               <table class="q-table">
@@ -665,16 +664,16 @@
           <div class="card-head"><i class="fa-solid fa-hourglass-half"></i> Anti-Ban Queue — how sending works</div>
           <div class="card-body">
             <div class="note-strip warn" style="margin-bottom:14px"><i class="fa-solid fa-shield-halved"></i><div>
-              Messages are <b>never blasted out together</b>. The server sends <b>one message at a time</b> with a fresh
-              <b>random 5–9 second gap</b> before each next send — human-like spacing that protects your number from WhatsApp bans.
-              Fire as many API requests as you like; they queue automatically.
+              Messages are <b>never blasted out together</b>. Protection layers, all automatic:
+              <b>one message at a time</b> with a fresh <b>random 5–9s gap</b> · brief <b>"typing…" simulation</b> before each send ·
+              a <b>30–60s cool-down after every 20 messages</b> · a <b>daily send limit</b> (default 500/day, configurable) ·
+              numbers are <b>verified on WhatsApp</b> before sending. Fire as many API requests as you like; they queue automatically.
             </div></div>
             <table class="doc-table">
               <tr><th>Response <code>status</code></th><th>Meaning</th></tr>
-              <tr><td><code>sent</code></td><td>Message went out while your HTTP request was waiting (within ~15s).</td></tr>
+              <tr><td><code>sent</code></td><td>Message went out while your HTTP request was waiting (within ~15s). Fire-and-forget — delivery/seen receipts are <b>not tracked</b>.</td></tr>
               <tr><td><code>queued</code></td><td>Accepted &amp; in the queue — it WILL send when its turn comes. No action needed. Track via <code>GET /api/status</code> → <code>pendingMessages</code>.</td></tr>
-              <tr><td><code>delivered</code> / <code>read</code></td><td>Delivery receipts, updated internally after sending.</td></tr>
-              <tr><td><code>failed</code></td><td>Send failed (e.g. WhatsApp disconnected mid-queue).</td></tr>
+              <tr><td><code>failed</code></td><td>Send failed (e.g. WhatsApp disconnected mid-queue, or number not on WhatsApp).</td></tr>
             </table>
           </div>
         </div>
@@ -714,9 +713,10 @@
               <tr><td>400 / 422</td><td><code>VALIDATION_ERROR</code></td><td>Bad body — check <code>details</code> in the response</td></tr>
               <tr><td>401</td><td><code>UNAUTHORIZED</code></td><td>Missing / invalid / revoked API key</td></tr>
               <tr><td>403</td><td><code>ADMIN_REQUIRED</code></td><td>Endpoint needs an admin-role key</td></tr>
-              <tr><td>404</td><td><code>RECIPIENT_NOT_FOUND</code></td><td>Number not on WhatsApp (when existence check is enabled)</td></tr>
+              <tr><td>404</td><td><code>RECIPIENT_NOT_FOUND</code></td><td>Number is not registered on WhatsApp (checked before every send)</td></tr>
               <tr><td>413</td><td><code>UPLOAD_ERROR</code></td><td>Media file too large (default limit 25 MB)</td></tr>
               <tr><td>429</td><td><code>RATE_LIMITED</code></td><td>Too many requests — default 120 per key per 15 min (HTTP level; the send queue is separate)</td></tr>
+              <tr><td>429</td><td><code>DAILY_LIMIT_REACHED</code></td><td>Anti-ban daily cap hit (default 500/day, <code>DAILY_SEND_LIMIT</code> in .env) — resets midnight UTC</td></tr>
               <tr><td>503</td><td><code>WHATSAPP_NOT_CONNECTED</code></td><td>Session not linked — open the dashboard and scan the QR</td></tr>
             </table>
             <div class="note-strip"><i class="fa-solid fa-circle-info"></i><div>
@@ -911,6 +911,7 @@
     $('kpiQueue').textContent = pending;
     $('sbQueueBadge').textContent = pending;
     $('sbQueueBadge').classList.toggle('hidden', !pending);
+    if (status.dailyLimit) $('kpiQueueFoot').textContent = 'today: ' + (status.sentToday || 0) + ' / ' + status.dailyLimit + ' daily limit';
     $('kpiGap').textContent = gapText(status);
     $('kpiConn').textContent = status.connected ? 'Online' : (status.status === 'qr_ready' ? 'Scan QR' : status.status);
     $('kpiConnBox').className = 'small-box ' + (status.connected ? 'sb-green' : 'sb-red');
@@ -999,11 +1000,9 @@
       const { counts, messages } = json.data;
       const c = s => counts[s] || 0;
       $('qcQueued').textContent = c('queued');
-      $('qcSent').textContent = c('sent');
-      $('qcDelivered').textContent = c('delivered');
-      $('qcRead').textContent = c('read');
+      $('qcSent').textContent = c('sent') + c('delivered') + c('read'); // legacy delivered/read rows count as sent
       $('qcFailed').textContent = c('failed');
-      $('qcAll').textContent = c('queued') + c('sent') + c('delivered') + c('read') + c('failed');
+      $('qcAll').textContent = Object.values(counts).reduce((sum, n) => sum + n, 0);
 
       let qPos = 0; // position counter for queued rows (FIFO)
       $('qBody').innerHTML = messages.length ? messages.map(m => {
@@ -1091,12 +1090,12 @@
       ],
       ex: { to: '923001234567', latitude: 24.8607, longitude: 67.0011, name: 'Office' } },
     { m: 'GET', p: '/api/status', sum: 'connection + queue status', params: [],
-      resp: '{ "status": "connected", "connected": true, "pendingMessages": 2,\n  "queueGapMs": { "min": 5000, "max": 9000 }, "user": "923***545@s.whatsapp.net", ... }' },
+      resp: '{ "status": "connected", "connected": true, "pendingMessages": 2,\n  "queueGapMs": { "min": 5000, "max": 9000 },\n  "sentToday": 41, "dailyLimit": 500, "user": "923***545@s.whatsapp.net", ... }' },
     { m: 'GET', p: '/api/messages', sum: 'queue + history (?status=queued&limit=100)', params: [
-        ['status', 'string', 0, 'queued | sent | delivered | read | failed'],
+        ['status', 'string', 0, 'queued | sent | failed'],
         ['limit', 'number', 0, '1–200, default 50']
       ],
-      resp: '{ "counts": { "queued": 2, "sent": 40, "delivered": 31, "read": 12, "failed": 1 },\n  "messages": [ { "id": "…", "recipient": "923…", "type": "text", "preview": "Hello…",\n    "status": "queued", "createdAt": "…" } ] }\n// admin key = all messages; api-role key = only its own' },
+      resp: '{ "counts": { "queued": 2, "sent": 40, "failed": 1 },\n  "messages": [ { "id": "…", "recipient": "923…", "type": "text", "preview": "Hello…",\n    "status": "queued", "createdAt": "…" } ] }\n// admin key = all messages; api-role key = only its own' },
     { m: 'GET', p: '/api/me', sum: 'info about your API key', params: [],
       resp: '{ "id": "…", "name": "my-shop-app", "role": "api", "prefix": "wapi_xxxx", "expiresAt": null }' },
     { m: 'GET', p: '/api/qr', sum: 'QR code (?format=png for raw image)', params: [],

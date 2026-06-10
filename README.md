@@ -5,10 +5,13 @@ WhatsApp: https://wa.me/923224083545 (For Custom Projects)
 YouTube: https://www.youtube.com/@rameezimdad (Subscribe for more!)
 
 Send WhatsApp messages from any app with a simple HTTP call. Scan a QR once — done.
-**Send-only** (incoming messages are ignored) with a built-in **anti-ban queue**: messages go
-out one at a time with a **random 5–9 second gap** (human-like spacing, tune via
-`MESSAGE_DELAY_MIN_MS` / `MESSAGE_DELAY_MAX_MS`). **CORS is open to any origin** by
-default (`CORS_ORIGINS=*`) — call it from any website, app, localhost or `file://` page.
+**Send-only and fire-and-forget** — incoming messages are ignored and delivery/seen receipts
+are not tracked. Built-in **anti-ban protection** (all automatic): one message at a time with a
+**random 5–9s gap**, **"typing…" simulation** before each send, a **30–60s cool-down every 20
+messages**, a **daily send limit** (default 500/day), and recipients are **verified on WhatsApp**
+before sending. Tune everything in `.env` (`MESSAGE_DELAY_MIN/MAX_MS`, `TYPING_SIMULATION`,
+`BURST_SIZE`, `DAILY_SEND_LIMIT`…). **CORS is open to any origin** by default (`CORS_ORIGINS=*`) —
+call it from any website, app, localhost or `file://` page.
 
 **Use it from Google Apps Script / Sheets:** see [`clients/apps-script`](./clients/apps-script).
 

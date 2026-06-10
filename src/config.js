@@ -12,6 +12,11 @@ const bool = z
   .default('false')
   .transform(value => value === 'true')
 
+const boolTrue = z
+  .enum(['true', 'false'])
+  .default('true')
+  .transform(value => value === 'true')
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   HOST: z.string().trim().default('127.0.0.1'),
@@ -34,9 +39,14 @@ const schema = z.object({
   QR_WAIT_MS: z.coerce.number().int().min(1000).max(60000).default(15000),
   QR_TTL_MS: z.coerce.number().int().min(30000).max(180000).default(60000),
   RECONNECT_MAX_DELAY_MS: z.coerce.number().int().min(5000).max(300000).default(60000),
-  CHECK_RECIPIENT_EXISTS: bool,
+  CHECK_RECIPIENT_EXISTS: boolTrue,
   MESSAGE_DELAY_MIN_MS: z.coerce.number().int().min(0).max(60000).default(5000),
   MESSAGE_DELAY_MAX_MS: z.coerce.number().int().min(0).max(120000).default(9000),
+  TYPING_SIMULATION: boolTrue,
+  BURST_SIZE: z.coerce.number().int().min(0).max(1000).default(20),
+  BURST_PAUSE_MIN_MS: z.coerce.number().int().min(0).max(600000).default(30000),
+  BURST_PAUSE_MAX_MS: z.coerce.number().int().min(0).max(900000).default(60000),
+  DAILY_SEND_LIMIT: z.coerce.number().int().min(0).max(100000).default(500),
   PUBLIC_DOMAIN: z.string().trim().default(''),
   PUBLIC_IP: z.string().trim().default('')
 })
@@ -76,6 +86,11 @@ export const loadConfig = (env = process.env) => {
     checkRecipientExists: cfg.CHECK_RECIPIENT_EXISTS,
     messageDelayMinMs: cfg.MESSAGE_DELAY_MIN_MS,
     messageDelayMaxMs: Math.max(cfg.MESSAGE_DELAY_MAX_MS, cfg.MESSAGE_DELAY_MIN_MS), // max never below min
+    typingSimulation: cfg.TYPING_SIMULATION,
+    burstSize: cfg.BURST_SIZE,
+    burstPauseMinMs: cfg.BURST_PAUSE_MIN_MS,
+    burstPauseMaxMs: Math.max(cfg.BURST_PAUSE_MAX_MS, cfg.BURST_PAUSE_MIN_MS),
+    dailySendLimit: cfg.DAILY_SEND_LIMIT,
     publicDomain: cfg.PUBLIC_DOMAIN || null,
     publicIp: cfg.PUBLIC_IP || null
   }
