@@ -5,8 +5,9 @@ WhatsApp: https://wa.me/923224083545 (For Custom Projects)
 YouTube: https://www.youtube.com/@rameezimdad (Subscribe for more!)
 
 Send WhatsApp messages from any app with a simple HTTP call. Scan a QR once — done.
-**Send-only** (incoming messages are ignored). Messages go out **instantly** by default; set
-`MESSAGE_DELAY_MS` to add an anti-ban gap for bulk sends. **CORS is open to any origin** by
+**Send-only** (incoming messages are ignored) with a built-in **anti-ban queue**: messages go
+out one at a time with a **random 5–9 second gap** (human-like spacing, tune via
+`MESSAGE_DELAY_MIN_MS` / `MESSAGE_DELAY_MAX_MS`). **CORS is open to any origin** by
 default (`CORS_ORIGINS=*`) — call it from any website, app, localhost or `file://` page.
 
 **Use it from Google Apps Script / Sheets:** see [`clients/apps-script`](./clients/apps-script).
@@ -108,6 +109,6 @@ bash i.sh
 | Status / logs | `pm2 status` · `pm2 logs baileys-api` |
 | Restart | `pm2 restart baileys-api` |
 | Forgot admin key | `grep ADMIN_API_KEY /opt/baileys-api/.env` |
-| Message gap | `MESSAGE_DELAY_MS` in `/opt/baileys-api/.env` (then restart) |
+| Anti-ban gap | `MESSAGE_DELAY_MIN_MS` / `MESSAGE_DELAY_MAX_MS` in `/opt/baileys-api/.env` (then restart) — default 5000–9000 |
 
 Detailed manual install & troubleshooting: **[INSTALL.md](INSTALL.md)**

@@ -85,8 +85,10 @@ If your project already has an `onOpen()`, just call `waBuildMenu_()` inside it.
 
 ## Bulk sending & anti-ban
 
-The server now sends instantly (`MESSAGE_DELAY_MS=0`). For bulk runs the client adds its own
-gap between messages to avoid WhatsApp flagging the number. Tune it per project:
+The server queues messages itself — one at a time with a **random 5–9s gap** (anti-ban), so
+bulk sends are safe out of the box. Fire-and-forget: a response of `status: "queued"` means
+the server accepted it and will send it when its turn comes. To add an EXTRA client-side gap
+on top (rarely needed):
 
 ```js
 PropertiesService.getScriptProperties().setProperty('WA_THROTTLE_MS', '2500'); // ms between sends

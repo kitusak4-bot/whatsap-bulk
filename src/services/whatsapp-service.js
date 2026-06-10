@@ -44,11 +44,9 @@ export class WhatsAppService {
     this.startPromise = null
     this.version = null
     this.qrWaiters = new Set()
-    // one message at a time; optional MESSAGE_DELAY_MS gap between sends (0 = no gap, fire instantly)
-    const gap = cfg.messageDelayMs ?? 0
-    this.queue = gap > 0
-      ? new PQueue({ concurrency: 1, interval: gap, intervalCap: 1 })
-      : new PQueue({ concurrency: 1 })
+    // anti-ban: one msg at a time, random human-like gap between sends (default 5-9s)
+    this.queue = new PQueue({ concurrency: 1 })
+    this.nextSendAt = 0
   }
 
   async start() {
@@ -209,6 +207,12 @@ export class WhatsAppService {
     })
   }
 
+  sendGapMs() {
+    const min = this.cfg.messageDelayMinMs ?? 5000
+    const max = this.cfg.messageDelayMaxMs ?? 9000
+    return max > min ? min + Math.floor(Math.random() * (max - min + 1)) : min
+  }
+
   getStatus() {
     return {
       status: this.status,
@@ -219,6 +223,7 @@ export class WhatsAppService {
       qrExpiresAt: this.getQr()?.expiresAt || null,
       reconnectAttempts: this.reconnectAttempts,
       pendingMessages: this.queue.size + this.queue.pending,
+      queueGapMs: { min: this.cfg.messageDelayMinMs ?? 5000, max: this.cfg.messageDelayMaxMs ?? 9000 },
       lastError: this.lastError
     }
   }
@@ -260,8 +265,11 @@ export class WhatsAppService {
     }
 
     const task = this.queue.add(async () => {
+      const wait = this.nextSendAt - Date.now()
+      if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait))
       await this.ensureConnected()
       const result = await this.socket.sendMessage(recipient, content)
+      this.nextSendAt = Date.now() + this.sendGapMs()
       if (!result?.key?.id) throw new Error('WhatsApp did not return a message ID')
       const sent = this.messages.markSent(record.id, result)
       this.logs.write('info', 'message', 'message sent', {

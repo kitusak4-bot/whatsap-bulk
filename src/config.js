@@ -35,7 +35,8 @@ const schema = z.object({
   QR_TTL_MS: z.coerce.number().int().min(30000).max(180000).default(60000),
   RECONNECT_MAX_DELAY_MS: z.coerce.number().int().min(5000).max(300000).default(60000),
   CHECK_RECIPIENT_EXISTS: bool,
-  MESSAGE_DELAY_MS: z.coerce.number().int().min(0).max(60000).default(0),
+  MESSAGE_DELAY_MIN_MS: z.coerce.number().int().min(0).max(60000).default(5000),
+  MESSAGE_DELAY_MAX_MS: z.coerce.number().int().min(0).max(120000).default(9000),
   PUBLIC_DOMAIN: z.string().trim().default(''),
   PUBLIC_IP: z.string().trim().default('')
 })
@@ -73,7 +74,8 @@ export const loadConfig = (env = process.env) => {
     qrTtlMs: cfg.QR_TTL_MS,
     reconnectMaxDelayMs: cfg.RECONNECT_MAX_DELAY_MS,
     checkRecipientExists: cfg.CHECK_RECIPIENT_EXISTS,
-    messageDelayMs: cfg.MESSAGE_DELAY_MS,
+    messageDelayMinMs: cfg.MESSAGE_DELAY_MIN_MS,
+    messageDelayMaxMs: Math.max(cfg.MESSAGE_DELAY_MAX_MS, cfg.MESSAGE_DELAY_MIN_MS), // max never below min
     publicDomain: cfg.PUBLIC_DOMAIN || null,
     publicIp: cfg.PUBLIC_IP || null
   }

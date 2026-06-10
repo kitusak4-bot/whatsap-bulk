@@ -19,7 +19,7 @@ const WA_DEFAULTS = {
   base: 'https://thepashatraders.com/api', // your API base (not secret)
   key: '',                                 // set via waSetup('...', 'YOUR_KEY')
   fallbackKey: '',                         // optional 2nd key, tried if the first fails
-  throttleMs: 1200                         // client-side gap for bulk sends (anti-ban); server sends instantly now
+  throttleMs: 0                            // extra client-side gap for bulk sends; server already queues 5-9s anti-ban
 };
 
 const waCfg_ = () => {
