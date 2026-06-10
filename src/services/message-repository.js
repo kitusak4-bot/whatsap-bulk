@@ -26,6 +26,47 @@ export class MessageRepository {
       WHERE wa_message_id = ? AND status != 'failed'
     `)
     this.findMessage = db.prepare('SELECT message_json FROM messages WHERE wa_message_id = ?')
+
+    // queue page: queued drains FIFO (ASC), history newest first (DESC)
+    const COLS = 'id, wa_message_id, recipient, type, payload_json, status, error, api_key_id, created_at, updated_at'
+    this.listQ = {
+      all: db.prepare(`SELECT ${COLS} FROM messages ORDER BY created_at DESC LIMIT ?`),
+      status: db.prepare(`SELECT ${COLS} FROM messages WHERE status = ? ORDER BY CASE WHEN status = 'queued' THEN created_at END ASC, created_at DESC LIMIT ?`),
+      key: db.prepare(`SELECT ${COLS} FROM messages WHERE api_key_id = ? ORDER BY created_at DESC LIMIT ?`),
+      keyStatus: db.prepare(`SELECT ${COLS} FROM messages WHERE api_key_id = ? AND status = ? ORDER BY CASE WHEN status = 'queued' THEN created_at END ASC, created_at DESC LIMIT ?`)
+    }
+    this.countsAll = db.prepare('SELECT status, COUNT(*) AS n FROM messages GROUP BY status')
+    this.countsKey = db.prepare('SELECT status, COUNT(*) AS n FROM messages WHERE api_key_id = ? GROUP BY status')
+  }
+
+  preview(row) {
+    try {
+      const p = JSON.parse(row.payload_json)
+      const text = p.text || p.caption || p.fileName || p.name || ''
+      return String(text).slice(0, 90)
+    } catch { return '' }
+  }
+
+  list({ status = null, apiKeyId = null, limit = 50 } = {}) {
+    const rows = apiKeyId
+      ? (status ? this.listQ.keyStatus.all(apiKeyId, status, limit) : this.listQ.key.all(apiKeyId, limit))
+      : (status ? this.listQ.status.all(status, limit) : this.listQ.all.all(limit))
+    return rows.map(row => ({
+      id: row.id,
+      waMessageId: row.wa_message_id,
+      recipient: row.recipient,
+      type: row.type,
+      preview: this.preview(row),
+      status: row.status,
+      error: row.error,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }))
+  }
+
+  counts(apiKeyId = null) {
+    const rows = apiKeyId ? this.countsKey.all(apiKeyId) : this.countsAll.all()
+    return Object.fromEntries(rows.map(row => [row.status, row.n]))
   }
 
   create({ recipient, type, payload, apiKeyId }) {

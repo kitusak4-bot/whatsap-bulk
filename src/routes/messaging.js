@@ -112,6 +112,17 @@ export const createMessagingRouter = (service, cfg) => {
     ok(res, result, 201)
   }))
 
+  const STATUSES = ['queued', 'sent', 'delivered', 'read', 'failed']
+  router.get('/messages', asyncHandler(async (req, res) => {
+    const status = STATUSES.includes(req.query.status) ? req.query.status : null
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200)
+    const apiKeyId = req.apiKey.role === 'admin' ? null : req.apiKey.id // non-admin sees own only
+    ok(res, {
+      counts: service.messages.counts(apiKeyId),
+      messages: service.messages.list({ status, apiKeyId, limit })
+    })
+  }))
+
   router.post('/send-location', validate(locationSchema), asyncHandler(async (req, res) => {
     const { to, latitude, longitude, name, address } = req.body
     const location = { degreesLatitude: latitude, degreesLongitude: longitude, name, address }

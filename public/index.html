@@ -142,7 +142,7 @@
   }
   .nav-btn:hover { background: var(--blue-soft); }
 
-  main { flex: 1; width: 100%; padding: 24px 22px 40px; max-width: 1280px; }
+  main { flex: 1; width: 100%; padding: 24px 22px 40px; }
 
   /* ===== cards ===== */
   .card {
@@ -346,6 +346,42 @@
   .test-grid { display: grid; grid-template-columns: 240px 1fr auto; gap: 12px; align-items: end; }
   .send-result { margin-top: 12px; }
 
+  /* ===== queue page ===== */
+  .q-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .q-chips button {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 16px; font-size: 12.5px; cursor: pointer; color: var(--ink);
+  }
+  .q-chips button.active { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: 600; }
+  .q-chips .n {
+    background: var(--blue-soft); color: var(--navy); border-radius: 999px;
+    font-size: 11px; font-weight: 700; padding: 2px 8px; min-width: 24px; text-align: center;
+  }
+  .q-chips button.active .n { background: rgba(255,255,255,.22); color: #fff; }
+  .q-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .q-table th { text-align: left; padding: 10px; background: var(--blue-soft); color: var(--navy); font-size: 12px; white-space: nowrap; }
+  .q-table td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .q-table .pos { font-weight: 700; color: var(--amber); white-space: nowrap; }
+  .q-table .rcpt { font-family: Consolas, Menlo, monospace; font-size: 12.5px; color: var(--navy); white-space: nowrap; }
+  .q-table .prev { color: var(--muted); max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .q-table .tm { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .q-table .err { color: var(--red); font-size: 11.5px; display: block; margin-top: 3px; }
+  .mbadge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .mbadge.queued { background: var(--amber-soft); color: var(--amber); }
+  .mbadge.sent { background: var(--blue-soft); color: var(--blue); }
+  .mbadge.delivered, .mbadge.read { background: var(--green-soft); color: var(--green); }
+  .mbadge.failed { background: var(--red-soft); color: var(--red); }
+  .tico { width: 26px; height: 26px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; background: var(--blue-soft); color: var(--blue); font-size: 12px; }
+  .q-empty { text-align: center; color: var(--muted); padding: 34px 10px; font-size: 13.5px; }
+  .q-empty i { font-size: 30px; display: block; margin-bottom: 10px; color: var(--line); }
+  .sb-badge {
+    margin-left: auto; background: var(--amber); color: #fff;
+    border-radius: 999px; font-size: 10.5px; font-weight: 700;
+    padding: 2px 8px; min-width: 22px; text-align: center;
+  }
+  body.sb-mini .sb-badge { display: none; }
+
   /* ===== api keys panel ===== */
   .key-current {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -406,12 +442,13 @@
 <aside class="sidebar" id="sidebar">
   <div class="sb-brand">
     <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiGXxCe0WNNedmFqSWeF761f7Kshhc-NP5ChRQKz9fr97cO8VaarvD0KlCwqHojJVBWv-RAxfOqMI5rD4H78KnARyOc6QgwL1nRRFWf5xNQ1d9F9HfAoLPPGlTyP0GwNl4n-INMEsWLQ4Y7zJtz5bOdAnc2ePH9-uCRgshlo6BsS6gJEz6fhrxL-5U5O3sX/s160/channels4_profile.jpg" alt="Rameez Scripts">
-    <div class="t"><strong>WhatsApp API</strong><small>Baileys server &middot; Rameez Scripts</small></div>
+    <div class="t"><strong>WhatsApp API</strong><small>by Rameez Scripts</small></div>
   </div>
   <div class="sb-status down" id="sbStatus"><span class="dot"></span><span id="sbStatusText">Locked</span></div>
   <ul class="sb-menu">
     <li class="sec">Navigation</li>
     <li><button data-page="dashboard" class="active"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button></li>
+    <li><button data-page="queue"><i class="fa-solid fa-hourglass-half"></i><span>Message Queue</span><span class="sb-badge hidden" id="sbQueueBadge">0</span></button></li>
     <li><button data-page="docs"><i class="fa-solid fa-book"></i><span>API Docs</span></button></li>
     <li><button data-page="keys"><i class="fa-solid fa-key"></i><span>API Keys</span></button></li>
   </ul>
@@ -556,6 +593,35 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- ============ PAGE: message queue ============ -->
+      <div class="page" id="page-queue">
+        <div class="card">
+          <div class="card-head">
+            <i class="fa-solid fa-hourglass-half"></i> Message Queue &amp; History
+            <span class="right" id="qRefreshed">auto-refreshes every 4s</span>
+          </div>
+          <div class="card-body">
+            <div class="q-chips" id="qChips">
+              <button class="active" data-status=""><i class="fa-solid fa-list"></i> All <span class="n" id="qcAll">0</span></button>
+              <button data-status="queued"><i class="fa-solid fa-hourglass-half"></i> Queued <span class="n" id="qcQueued">0</span></button>
+              <button data-status="sent"><i class="fa-solid fa-paper-plane"></i> Sent <span class="n" id="qcSent">0</span></button>
+              <button data-status="delivered"><i class="fa-solid fa-check-double"></i> Delivered <span class="n" id="qcDelivered">0</span></button>
+              <button data-status="read"><i class="fa-solid fa-eye"></i> Read <span class="n" id="qcRead">0</span></button>
+              <button data-status="failed"><i class="fa-solid fa-circle-xmark"></i> Failed <span class="n" id="qcFailed">0</span></button>
+            </div>
+            <div class="note-strip warn" style="margin-bottom:14px"><i class="fa-solid fa-shield-halved"></i><div>
+              Queued messages drain <b>one-by-one with a random 5–9s gap</b> (anti-ban). Top of the queued list sends next.
+            </div></div>
+            <div style="overflow-x:auto">
+              <table class="q-table">
+                <thead><tr><th>#</th><th>Type</th><th>Recipient</th><th>Message</th><th>Status</th><th>Time</th></tr></thead>
+                <tbody id="qBody"><tr><td colspan="6" class="q-empty"><i class="fa-solid fa-inbox"></i>Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ============ PAGE: api docs ============ -->
@@ -745,9 +811,10 @@
 
   // ---- sidebar + pages ----
   const PAGES = {
-    dashboard: { icon: 'fa-gauge-high', title: 'Dashboard' },
-    docs:      { icon: 'fa-book',       title: 'API Docs' },
-    keys:      { icon: 'fa-key',        title: 'API Keys' }
+    dashboard: { icon: 'fa-gauge-high',     title: 'Dashboard' },
+    queue:     { icon: 'fa-hourglass-half', title: 'Message Queue' },
+    docs:      { icon: 'fa-book',           title: 'API Docs' },
+    keys:      { icon: 'fa-key',            title: 'API Keys' }
   };
 
   const showPage = name => {
@@ -758,6 +825,7 @@
     $('pageCrumb').textContent = PAGES[name].title;
     document.body.classList.remove('sb-open');
     if (name === 'docs' && !apiBuilt) buildDocs();
+    if (name === 'queue') startQueuePoll(); else stopQueuePoll();
     window.scrollTo({ top: 0 });
   };
 
@@ -775,6 +843,7 @@
   // ---- key gate ----
   const lock = msg => {
     clearTimeout(pollTimer);
+    stopQueuePoll();
     localStorage.removeItem('wapi_key');
     key = ''; me = null; apiBuilt = false;
     hide($('connView')); hide($('changeKeyBtn'));
@@ -837,9 +906,11 @@
   const gapText = s => s.queueGapMs ? Math.round(s.queueGapMs.min / 1000) + '–' + Math.round(s.queueGapMs.max / 1000) + 's' : '5–9s';
 
   const render = async status => {
-    // KPI updates on every poll
+    // KPI + sidebar badge updates on every poll
     const pending = status.pendingMessages || 0;
     $('kpiQueue').textContent = pending;
+    $('sbQueueBadge').textContent = pending;
+    $('sbQueueBadge').classList.toggle('hidden', !pending);
     $('kpiGap').textContent = gapText(status);
     $('kpiConn').textContent = status.connected ? 'Online' : (status.status === 'qr_ready' ? 'Scan QR' : status.status);
     $('kpiConnBox').className = 'small-box ' + (status.connected ? 'sb-green' : 'sb-red');
@@ -910,6 +981,59 @@
     pollTimer = setTimeout(tick, 4000);
   };
 
+  // ---- message queue page ----
+  const TYPE_ICONS = { text: 'fa-message', image: 'fa-image', document: 'fa-file', audio: 'fa-microphone', location: 'fa-location-dot' };
+  let qTimer = null;
+  let qStatus = '';
+
+  const mTime = iso => {
+    const d = new Date(iso);
+    const today = new Date().toDateString() === d.toDateString();
+    return today ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+  };
+
+  const loadQueue = async () => {
+    try {
+      const { res, json } = await api('/api/messages?limit=100' + (qStatus ? '&status=' + qStatus : ''));
+      if (!res.ok || !json.success) return;
+      const { counts, messages } = json.data;
+      const c = s => counts[s] || 0;
+      $('qcQueued').textContent = c('queued');
+      $('qcSent').textContent = c('sent');
+      $('qcDelivered').textContent = c('delivered');
+      $('qcRead').textContent = c('read');
+      $('qcFailed').textContent = c('failed');
+      $('qcAll').textContent = c('queued') + c('sent') + c('delivered') + c('read') + c('failed');
+
+      let qPos = 0; // position counter for queued rows (FIFO)
+      $('qBody').innerHTML = messages.length ? messages.map(m => {
+        const pos = m.status === 'queued' ? '<span class="pos">#' + (++qPos) + '</span>' : '';
+        const ico = TYPE_ICONS[m.type] || 'fa-message';
+        return '<tr>' +
+          '<td>' + (pos || '<span style="color:var(--line)">—</span>') + '</td>' +
+          '<td><span class="tico" title="' + m.type + '"><i class="fa-solid ' + ico + '"></i></span></td>' +
+          '<td class="rcpt">' + esc(m.recipient.replace('@s.whatsapp.net', '')) + '</td>' +
+          '<td class="prev" title="' + esc(m.preview) + '">' + (esc(m.preview) || '<i style="color:var(--line)">media</i>') +
+            (m.error ? '<span class="err"><i class="fa-solid fa-circle-exclamation"></i> ' + esc(m.error) + '</span>' : '') + '</td>' +
+          '<td><span class="mbadge ' + m.status + '">' + m.status + '</span></td>' +
+          '<td class="tm">' + mTime(m.createdAt) + '</td>' +
+          '</tr>';
+      }).join('') : '<tr><td colspan="6" class="q-empty"><i class="fa-solid fa-inbox"></i>No messages ' + (qStatus ? 'with status "' + qStatus + '"' : 'yet') + '</td></tr>';
+      $('qRefreshed').textContent = 'updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch (e) { /* AUTH handled in api(); transient errors retry next poll */ }
+  };
+
+  const startQueuePoll = () => { stopQueuePoll(); loadQueue(); qTimer = setInterval(loadQueue, 4000); };
+  const stopQueuePoll = () => { clearInterval(qTimer); qTimer = null; };
+
+  $('qChips').addEventListener('click', e => {
+    const b = e.target.closest('button[data-status]');
+    if (!b) return;
+    qStatus = b.dataset.status;
+    [...$('qChips').children].forEach(c => c.classList.toggle('active', c === b));
+    loadQueue();
+  });
+
   // ---- logout ----
   $('logoutBtn').onclick = async () => {
     if (!confirm('Logout this WhatsApp session? You will need to scan the QR again.')) return;
@@ -968,6 +1092,11 @@
       ex: { to: '923001234567', latitude: 24.8607, longitude: 67.0011, name: 'Office' } },
     { m: 'GET', p: '/api/status', sum: 'connection + queue status', params: [],
       resp: '{ "status": "connected", "connected": true, "pendingMessages": 2,\n  "queueGapMs": { "min": 5000, "max": 9000 }, "user": "923***545@s.whatsapp.net", ... }' },
+    { m: 'GET', p: '/api/messages', sum: 'queue + history (?status=queued&limit=100)', params: [
+        ['status', 'string', 0, 'queued | sent | delivered | read | failed'],
+        ['limit', 'number', 0, '1–200, default 50']
+      ],
+      resp: '{ "counts": { "queued": 2, "sent": 40, "delivered": 31, "read": 12, "failed": 1 },\n  "messages": [ { "id": "…", "recipient": "923…", "type": "text", "preview": "Hello…",\n    "status": "queued", "createdAt": "…" } ] }\n// admin key = all messages; api-role key = only its own' },
     { m: 'GET', p: '/api/me', sum: 'info about your API key', params: [],
       resp: '{ "id": "…", "name": "my-shop-app", "role": "api", "prefix": "wapi_xxxx", "expiresAt": null }' },
     { m: 'GET', p: '/api/qr', sum: 'QR code (?format=png for raw image)', params: [],
