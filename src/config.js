@@ -24,7 +24,7 @@ const schema = z.object({
   BAILEYS_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('warn'),
   LOG_FILE: z.string().trim().default('./logs/app.log'),
   LOG_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(30),
-  CORS_ORIGINS: z.string().default(''),
+  CORS_ORIGINS: z.string().default('*'),
   API_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(900000),
   API_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
   ADMIN_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(20),
@@ -35,7 +35,7 @@ const schema = z.object({
   QR_TTL_MS: z.coerce.number().int().min(30000).max(180000).default(60000),
   RECONNECT_MAX_DELAY_MS: z.coerce.number().int().min(5000).max(300000).default(60000),
   CHECK_RECIPIENT_EXISTS: bool,
-  MESSAGE_DELAY_MS: z.coerce.number().int().min(0).max(60000).default(5500),
+  MESSAGE_DELAY_MS: z.coerce.number().int().min(0).max(60000).default(0),
   PUBLIC_DOMAIN: z.string().trim().default(''),
   PUBLIC_IP: z.string().trim().default('')
 })

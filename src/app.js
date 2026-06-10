@@ -63,16 +63,20 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp }) => {
     crossOriginResourcePolicy: { policy: 'cross-origin' }
   }))
   app.use((req, res, next) => {
-    // browsers send Origin on every POST; the dashboard is same-host so always allow it
+    // API-key auth is the real guard, so CORS is wide-open by default (CORS_ORIGINS=*):
+    // works from any website, app, localhost or file:// page. Server-side callers
+    // (Apps Script UrlFetchApp, curl, backends) send no Origin and bypass CORS entirely.
     const origin = req.get('origin')
+    const allowAll = cfg.corsOrigins.includes('*')
     let sameOrigin = false
     try { sameOrigin = Boolean(origin) && new URL(origin).host === req.get('host') } catch { /* malformed origin */ }
     cors({
       credentials: false,
-      methods: ['GET', 'POST'],
-      allowedHeaders: ['content-type', 'x-api-key', 'authorization', 'x-request-id'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      // reflect whatever headers the client asks for so any app works; fall back to the known set
+      allowedHeaders: req.get('access-control-request-headers')?.split(',').map(value => value.trim()) || ['content-type', 'x-api-key', 'authorization', 'x-request-id'],
       origin: (value, callback) => {
-        if (!value || sameOrigin || cfg.corsOrigins.includes(value)) return callback(null, true)
+        if (!value || allowAll || sameOrigin || cfg.corsOrigins.includes(value)) return callback(null, true)
         callback(new Error('CORS_ORIGIN_DENIED'))
       }
     })(req, res, next)

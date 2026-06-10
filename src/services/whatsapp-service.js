@@ -44,8 +44,8 @@ export class WhatsAppService {
     this.startPromise = null
     this.version = null
     this.qrWaiters = new Set()
-    // anti-ban: one message at a time, MESSAGE_DELAY_MS gap between sends
-    const gap = cfg.messageDelayMs ?? 5500
+    // one message at a time; optional MESSAGE_DELAY_MS gap between sends (0 = no gap, fire instantly)
+    const gap = cfg.messageDelayMs ?? 0
     this.queue = gap > 0
       ? new PQueue({ concurrency: 1, interval: gap, intervalCap: 1 })
       : new PQueue({ concurrency: 1 })
