@@ -54,7 +54,7 @@ if [ ! -f .env ]; then
   cp .env.example .env
   sed -i "s|^ADMIN_API_KEY=.*|ADMIN_API_KEY=$ADMIN_KEY|" .env
   sed -i "s|^API_KEY_PEPPER=.*|API_KEY_PEPPER=$PEPPER|" .env
-  sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=|" .env
+  sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=*|" .env
   sed -i "s|^PUBLIC_IP=.*|PUBLIC_IP=$PUB_IP|" .env
 else
   ADMIN_KEY="(unchanged — using your existing .env)"

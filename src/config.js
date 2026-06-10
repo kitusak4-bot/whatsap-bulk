@@ -61,7 +61,8 @@ export const loadConfig = (env = process.env) => {
     baileysLogLevel: cfg.BAILEYS_LOG_LEVEL,
     logFile: path.resolve(cfg.LOG_FILE),
     logRetentionDays: cfg.LOG_RETENTION_DAYS,
-    corsOrigins: cfg.CORS_ORIGINS.split(',').map(value => value.trim()).filter(Boolean),
+    // empty = wide open (*) so installs that blanked the var still work from any origin
+    corsOrigins: (cfg.CORS_ORIGINS.trim() || '*').split(',').map(value => value.trim()).filter(Boolean),
     apiRateLimitWindowMs: cfg.API_RATE_LIMIT_WINDOW_MS,
     apiRateLimitMax: cfg.API_RATE_LIMIT_MAX,
     adminRateLimitMax: cfg.ADMIN_RATE_LIMIT_MAX,
