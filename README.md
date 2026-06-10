@@ -29,6 +29,25 @@ Open `http://YOUR_VPS_IP/` → paste the key → scan the QR with WhatsApp (**Se
 
 **Reinstall from zero** (new key + new QR): same command but `bash i.sh --fresh`
 
+## 🗑️ Delete old install (manual cleanup)
+
+Run these one by one if you want to remove everything yourself:
+
+```bash
+pm2 delete baileys-api
+```
+```bash
+rm -rf /opt/baileys-api ~/baileys-api ~/i.sh
+```
+```bash
+rm -f /etc/nginx/sites-enabled/baileys-api /etc/nginx/sites-available/baileys-api
+```
+```bash
+systemctl reload nginx
+```
+
+(`bash i.sh --fresh` does the same cleanup automatically before installing.)
+
 ---
 
 ## 📤 Send a message
