@@ -33,6 +33,20 @@ Open `http://YOUR_VPS_IP/` → paste the key → scan the QR with WhatsApp (**Se
 
 **Reinstall from zero** (new key + new QR): same command but `bash i.sh --fresh`
 
+## 🔄 Update an existing install (one command)
+
+Already installed? Get the latest code **without losing anything** — same `.env`, same API
+keys, same WhatsApp session (no QR re-scan), message history intact:
+
+```bash
+curl -fsSLo u.sh https://raw.githubusercontent.com/rameezimdad/baileys-api/master/deploy/vps-update.sh && bash u.sh
+```
+
+> Repo note: same as install — make the repo **Public** while running this, set back to
+> **Private** after (or pass a GitHub token: `bash u.sh YOUR_TOKEN`).
+
+Run it on every client VPS whenever you ship a new version — takes ~1 minute.
+
 ## 🗑️ Delete old install (manual cleanup)
 
 Run these one by one if you want to remove everything yourself:
