@@ -1,44 +1,61 @@
-services:
-  api:
-    build: .
-    container_name: whatsap-api
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    env_file: .env
-    environment:
-      - HOST=0.0.0.0
-    volumes:
-      - wa-data:/app/data
-      - wa-auth:/app/auth
-      - wa-campaigns:/app/campaigns
-      - wa-logs:/app/logs
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/healthz"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+version: "3.9"
 
-  dashboard:
+services:
+  app:
     build: .
-    container_name: whatsap-dashboard
+    container_name: baileys-api
     restart: unless-stopped
-    command: ["node", "dashboard/server.js"]
     ports:
-      - "4000:4000"
+      - "${PORT:-3000}:3000"
     environment:
-      - DASHBOARD_PORT=4000
-      - DASHBOARD_USER=${DASHBOARD_USER:-admin}
-      - DASHBOARD_PASS=${DASHBOARD_PASS:-admin123}
+      - NODE_ENV=${NODE_ENV:-production}
+      - HOST=0.0.0.0
+      - PORT=3000
+      - ADMIN_API_KEY=${ADMIN_API_KEY:?ADMIN_API_KEY is required}
+      - API_KEY_PEPPER=${API_KEY_PEPPER:?API_KEY_PEPPER is required}
+      - DATABASE_PATH=/app/data/baileys.sqlite
+      - LOG_FILE=/app/logs/app.log
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - BAILEYS_LOG_LEVEL=${BAILEYS_LOG_LEVEL:-warn}
+      - LOG_RETENTION_DAYS=${LOG_RETENTION_DAYS:-30}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - API_RATE_LIMIT_WINDOW_MS=${API_RATE_LIMIT_WINDOW_MS:-900000}
+      - API_RATE_LIMIT_MAX=${API_RATE_LIMIT_MAX:-120}
+      - ADMIN_RATE_LIMIT_MAX=${ADMIN_RATE_LIMIT_MAX:-20}
+      - MAX_MEDIA_BYTES=${MAX_MEDIA_BYTES:-26214400}
+      - ALLOW_REMOTE_MEDIA=${ALLOW_REMOTE_MEDIA:-false}
+      - REMOTE_MEDIA_TIMEOUT_MS=${REMOTE_MEDIA_TIMEOUT_MS:-15000}
+      - QR_WAIT_MS=${QR_WAIT_MS:-15000}
+      - QR_TTL_MS=${QR_TTL_MS:-60000}
+      - RECONNECT_MAX_DELAY_MS=${RECONNECT_MAX_DELAY_MS:-60000}
+      - CHECK_RECIPIENT_EXISTS=${CHECK_RECIPIENT_EXISTS:-true}
+      - MESSAGE_DELAY_MIN_MS=${MESSAGE_DELAY_MIN_MS:-5000}
+      - MESSAGE_DELAY_MAX_MS=${MESSAGE_DELAY_MAX_MS:-9000}
+      - TYPING_SIMULATION=${TYPING_SIMULATION:-true}
+      - BURST_SIZE=${BURST_SIZE:-20}
+      - BURST_PAUSE_MIN_MS=${BURST_PAUSE_MIN_MS:-30000}
+      - BURST_PAUSE_MAX_MS=${BURST_PAUSE_MAX_MS:-60000}
+      - DAILY_SEND_LIMIT=${DAILY_SEND_LIMIT:-500}
+      - PUBLIC_DOMAIN=${PUBLIC_DOMAIN:-}
+      - PUBLIC_IP=${PUBLIC_IP:-}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
+      - POSTHOG_API_KEY=${POSTHOG_API_KEY:-}
+      - POSTHOG_HOST=${POSTHOG_HOST:-https://app.posthog.com}
+      - DEMO_MODE=${DEMO_MODE:-false}
+      - DEMO_ADMIN_KEY=${DEMO_ADMIN_KEY:-}
     volumes:
-      - wa-campaigns:/app/campaigns
-    depends_on:
-      api:
-        condition: service_healthy
+      - baileys_data:/app/data
+      - baileys_logs:/app/logs
+      - baileys_campaigns:/app/campaigns
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
-  wa-data:
-  wa-auth:
-  wa-campaigns:
-  wa-logs:
+  baileys_data:
+  baileys_logs:
+  baileys_campaigns:

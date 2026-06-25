@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  ADMIN_API_KEY: ci-admin-key-that-is-at-least-thirty-two-chars-long
+  API_KEY_PEPPER: ci-pepper-that-is-at-least-thirty-two-chars-long
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  test:
+    name: Tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        node: ["20", "22"]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Upload coverage
+        if: ${{ matrix.node == '22' }}
+        run: |
+          mkdir -p coverage
+          cp .taprc coverage/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: ${{ matrix.node == '22' }}
+        with:
+          name: test-results
+          path: coverage/
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: baileys-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

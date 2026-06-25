@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baileys WhatsApp API — Send messages programmatically</title>
+  <meta name="description" content="Production-ready WhatsApp REST API with anti-ban protection. Send text, images, documents, audio, and location messages programmatically.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0f0f13;--bg-card:#1a1a23;--bg-hover:#22222e;--border:#2a2a38;--text:#e8e8ed;--text-muted:#8888a0;--primary:#6366f1;--primary-hover:#5558e6;--primary-dim:rgba(99,102,241,0.1);--success:#22c55e;--radius:12px;--radius-sm:8px}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+    .container{max-width:1100px;margin:0 auto;padding:0 24px}
+    nav{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;max-width:1100px;margin:0 auto}
+    .logo{font-weight:700;font-size:1.25rem;display:flex;align-items:center;gap:10px}
+    .logo-icon{width:32px;height:32px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
+    .nav-links{display:flex;gap:24px;align-items:center}
+    .nav-links a{color:var(--text-muted);text-decoration:none;font-size:0.9rem;font-weight:500;transition:color .2s}
+    .nav-links a:hover{color:var(--text)}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:var(--radius-sm);font-weight:600;font-size:0.9rem;text-decoration:none;transition:all .2s;cursor:pointer;border:none;font-family:inherit}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-primary:hover{background:var(--primary-hover);transform:translateY(-1px)}
+    .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+    .btn-outline:hover{background:var(--bg-hover);border-color:var(--text-muted)}
+    .btn-large{padding:14px 32px;font-size:1rem}
+    .hero{padding:80px 0 60px;text-align:center}
+    .hero h1{font-size:3rem;font-weight:800;line-height:1.15;letter-spacing:-0.02em;margin-bottom:20px}
+    .hero h1 span{background:linear-gradient(135deg,var(--primary),#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero p{font-size:1.15rem;color:var(--text-muted);max-width:620px;margin:0 auto 36px;line-height:1.7}
+    .hero-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+    .hero-stats{display:flex;justify-content:center;gap:48px;margin-top:60px;flex-wrap:wrap}
+    .hero-stat{text-align:center}
+    .hero-stat .num{font-size:1.8rem;font-weight:700;color:var(--text)}
+    .hero-stat .label{font-size:0.85rem;color:var(--text-muted);margin-top:4px}
+    .section{padding:80px 0}
+    .section-label{display:inline-block;font-size:0.8rem;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px}
+    .section h2{font-size:2rem;font-weight:700;margin-bottom:16px;letter-spacing:-0.01em}
+    .section>.container>p{color:var(--text-muted);max-width:560px;margin-bottom:48px;font-size:1.05rem}
+    .features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+    .feature-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;transition:all .2s}
+    .feature-card:hover{background:var(--bg-hover);border-color:var(--text-muted);transform:translateY(-2px)}
+    .feature-card .icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px}
+    .feature-card h3{font-size:1.05rem;font-weight:600;margin-bottom:8px}
+    .feature-card p{font-size:0.9rem;color:var(--text-muted);line-height:1.6}
+    .icon-purple{background:rgba(168,85,247,0.15)}
+    .icon-blue{background:rgba(99,102,241,0.15)}
+    .icon-green{background:rgba(34,197,94,0.15)}
+    .icon-yellow{background:rgba(234,179,8,0.15)}
+    .icon-red{background:rgba(239,68,68,0.15)}
+    .icon-cyan{background:rgba(6,182,212,0.15)}
+    .code-block{background:#0a0a12;border:1px solid var(--border);border-radius:var(--radius);padding:24px;overflow-x:auto;margin:24px 0}
+    .code-block code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:0.85rem;color:var(--text);line-height:1.7}
+    .code-block .comment{color:#6b7280}
+    .code-block .keyword{color:#818cf8}
+    .code-block .string{color:#34d399}
+    .code-block .function{color:#f472b6}
+    .steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:24px;counter-reset:step}
+    .step{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;position:relative}
+    .step-num{width:36px;height:36px;border-radius:50%;background:var(--primary-dim);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;margin-bottom:16px}
+    .step h3{font-size:1rem;font-weight:600;margin-bottom:8px}
+    .step p{font-size:0.9rem;color:var(--text-muted)}
+    .pricing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+    .pricing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:32px;text-align:center;transition:all .2s;display:flex;flex-direction:column}
+    .pricing-card.featured{border-color:var(--primary);position:relative}
+    .pricing-card.featured::before{content:'Most Popular';position:absolute;top:-12px;left:50%;transform:translate(-50%);background:var(--primary);color:#fff;font-size:0.75rem;font-weight:600;padding:4px 16px;border-radius:20px}
+    .pricing-card:hover{transform:translateY(-3px);border-color:var(--text-muted)}
+    .pricing-card .plan-name{font-size:0.9rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+    .pricing-card .price{font-size:2.5rem;font-weight:800;margin-bottom:4px}
+    .pricing-card .price span{font-size:1rem;font-weight:500;color:var(--text-muted)}
+    .pricing-card .description{font-size:0.85rem;color:var(--text-muted);margin-bottom:24px}
+    .pricing-card ul{list-style:none;text-align:left;margin-bottom:28px;flex:1}
+    .pricing-card ul li{padding:8px 0;font-size:0.9rem;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+    .pricing-card ul li:last-child{border-bottom:none}
+    .pricing-card ul li::before{content:'✓';color:var(--success);font-weight:700}
+    .pricing-card .btn{margin-top:auto}
+    .cta-section{text-align:center;padding:80px 0}
+    .cta-section h2{font-size:2.2rem;font-weight:700;margin-bottom:16px}
+    .cta-section p{color:var(--text-muted);max-width:520px;margin:0 auto 32px;font-size:1.05rem}
+    footer{padding:40px 0;border-top:1px solid var(--border)}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px}
+    @media(max-width:768px){
+      .footer-grid{grid-template-columns:1fr 1fr;gap:32px}
+      .hero h1{font-size:2rem}
+      .hero-stats{gap:24px}
+      .section{padding:48px 0}
+      .features-grid{grid-template-columns:1fr}
+      .pricing-grid{grid-template-columns:1fr}
+      .nav-links{display:none}
+    }
+    footer .logo-text{font-weight:600;margin-bottom:8px}
+    footer .logo-text small{display:block;color:var(--text-muted);font-weight:400;font-size:0.8rem;margin-top:4px}
+    footer h4{font-size:0.85rem;font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted)}
+    footer a{display:block;color:var(--text-muted);text-decoration:none;font-size:0.9rem;margin-bottom:8px;transition:color .2s}
+    footer a:hover{color:var(--text)}
+    .pill{display:inline-flex;align-items:center;gap:6px;background:var(--primary-dim);color:var(--primary);padding:6px 14px;border-radius:20px;font-size:0.8rem;font-weight:500;margin-bottom:20px}
+    .endpoints{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+    .endpoint{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;display:flex;align-items:center;gap:12px;font-size:0.85rem;font-family:monospace}
+    .endpoint .method{font-weight:700;padding:2px 8px;border-radius:4px;font-size:0.75rem;text-transform:uppercase}
+    .method-get{background:rgba(34,197,94,0.15);color:#22c55e}
+    .method-post{background:rgba(99,102,241,0.15);color:#818cf8}
+    .endpoint .path{color:var(--text)}
+    .endpoint .desc{color:var(--text-muted);font-family:Inter,sans-serif;margin-left:auto;font-size:0.8rem}
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">
+      <div class="logo-icon">WB</div>
+      Baileys API
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#docs">API</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#docs">Docs</a>
+      <a href="/dashboard" class="btn btn-outline">Dashboard</a>
+      <a href="https://github.com/rameezimdad/baileys-api" target="_blank" class="btn btn-primary">GitHub</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="container">
+      <div class="pill">Now with Docker & CI/CD</div>
+      <h1>WhatsApp API for<br><span>developers who ship</span></h1>
+      <p>Production-ready REST API to send WhatsApp messages programmatically. One QR scan, infinite messages. Built-in anti-ban protection, message queuing, and campaign management.</p>
+      <div class="hero-actions">
+        <a href="#docs" class="btn btn-primary btn-large">Get Started</a>
+        <a href="https://github.com/rameezimdad/baileys-api" target="_blank" class="btn btn-outline btn-large">View on GitHub</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="num">1</div>
+          <div class="label">QR scan to start</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num">5-9s</div>
+          <div class="label">Anti-ban delay</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num">500</div>
+          <div class="label">Daily send limit</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num">99%</div>
+          <div class="label">Delivery rate</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-label">Features</div>
+      <h2>Everything you need to send WhatsApp messages at scale</h2>
+      <p>Built by developers for developers. No monthly fees, no black-box gateways — just a clean API backed by solid engineering.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="icon icon-purple">&#9889;</div>
+          <h3>Simple REST API</h3>
+          <p>Send text, images, documents, audio, and locations with a single HTTP call. Language-agnostic — works from any stack.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon icon-blue">&#128737;</div>
+          <h3>Anti-Ban Protection</h3>
+          <p>Random 5-9s delays, typing simulation, burst cool-downs, and daily limits — all automatic. Keeps your WhatsApp number safe.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon icon-green">&#128230;</div>
+          <h3>Bulk Campaigns</h3>
+          <p>Upload CSV contacts, craft your message, and launch. Queued messages send automatically with safe spacing.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon icon-yellow">&#128274;</div>
+          <h3>API Key Auth</h3>
+          <p>Secure HMAC-hashed API keys with admin and user roles. Generate, scope, and revoke from the dashboard.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon icon-red">&#128202;</div>
+          <h3>Analytics Dashboard</h3>
+          <p>Real-time connection status, message history, campaign reports, and 7-day send activity chart.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon icon-cyan">&#128640;</div>
+          <h3>Docker Ready</h3>
+          <p>One-command Docker deployment with persistent volumes, health checks, and security hardening.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="docs" style="background:var(--bg-card)">
+    <div class="container">
+      <div class="section-label">Quick Start</div>
+      <h2>Send a message in 3 steps</h2>
+      <p>Deploy, scan a QR code, and start sending. No complex setup, no ongoing costs.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Deploy</h3>
+          <p>Deploy with Docker, PM2, or our one-command VPS installer. Set your admin key and pepper.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Scan QR</h3>
+          <p>Open the dashboard, paste your API key, and scan the QR code with WhatsApp (Linked Devices).</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Send</h3>
+          <p>Call the API from any language. Messages queue automatically and send with anti-ban protection.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:48px">
+        <div class="section-label">API Endpoints</div>
+        <h2>RESTful by design</h2>
+        <p>All endpoints are authenticated via <code style="background:var(--bg);padding:2px 8px;border-radius:4px;font-size:0.85rem">X-API-Key</code> header.</p>
+        <div class="endpoints">
+          <div class="endpoint"><span class="method method-get">GET</span><span class="path">/healthz</span><span class="desc">Health check</span></div>
+          <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/status</span><span class="desc">WhatsApp status</span></div>
+          <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/qr</span><span class="desc">QR code</span></div>
+          <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/send-message</span><span class="desc">Send text</span></div>
+          <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/send-image</span><span class="desc">Send image</span></div>
+          <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/send-document</span><span class="desc">Send document</span></div>
+          <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/send-audio</span><span class="desc">Send audio</span></div>
+          <div class="endpoint"><span class="method method-post">POST</span><span class="path">/api/send-location</span><span class="desc">Send location</span></div>
+          <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/messages</span><span class="desc">Message history</span></div>
+          <div class="endpoint"><span class="method method-get">GET</span><span class="path">/api/docs</span><span class="desc">Swagger UI</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:48px">
+        <h2>Send with curl</h2>
+        <div class="code-block">
+          <code>
+            <span class="comment"># Send a text message</span><br>
+            curl -X POST http://your-server/api/send-message \<br>
+            &nbsp;&nbsp;-H "X-API-Key: wapi_your_api_key_here" \<br>
+            &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+            &nbsp;&nbsp;-d '{"to":"923001234567","message":"Hello from the API!"}'
+          </code>
+        </div>
+        <div class="code-block">
+          <code>
+            <span class="comment"># Send an image</span><br>
+            curl -X POST http://your-server/api/send-image \<br>
+            &nbsp;&nbsp;-H "X-API-Key: wapi_your_api_key_here" \<br>
+            &nbsp;&nbsp;-F "to=923001234567" \<br>
+            &nbsp;&nbsp;-F "file=@photo.jpg" \<br>
+            &nbsp;&nbsp;-F "caption=Check this out!"
+          </code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="pricing">
+    <div class="container">
+      <div class="section-label">Pricing</div>
+      <h2>Simple, transparent pricing</h2>
+      <p>Start free, scale as you grow. No hidden fees, no long-term contracts.</p>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="plan-name">Self-Hosted</div>
+          <div class="price">Free <span>forever</span></div>
+          <div class="description">Deploy on your own infrastructure</div>
+          <ul>
+            <li>Unlimited messages</li>
+            <li>All API endpoints</li>
+            <li>Campaign management</li>
+            <li>API key authentication</li>
+            <li>Community support</li>
+          </ul>
+          <a href="https://github.com/rameezimdad/baileys-api" target="_blank" class="btn btn-outline">Deploy Now</a>
+        </div>
+        <div class="pricing-card featured">
+          <div class="plan-name">Cloud</div>
+          <div class="price">$29 <span>/mo</span></div>
+          <div class="description">Managed hosting with premium support</div>
+          <ul>
+            <li>Managed infrastructure</li>
+            <li>99.9% uptime SLA</li>
+            <li>Priority support</li>
+            <li>Automatic updates</li>
+            <li>Monitoring & alerts</li>
+          </ul>
+          <a href="#" class="btn btn-primary">Coming Soon</a>
+        </div>
+        <div class="pricing-card">
+          <div class="plan-name">Enterprise</div>
+          <div class="price">Custom</div>
+          <div class="description">Dedicated infrastructure for high volume</div>
+          <ul>
+            <li>Dedicated servers</li>
+            <li>Custom integrations</li>
+            <li>SLA guarantees</li>
+            <li>White-label option</li>
+            <li>24/7 support</li>
+          </ul>
+          <a href="#" class="btn btn-outline">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to ship?</h2>
+      <p>Deploy in minutes, send millions of messages. No monthly fees, no locked-in contracts.</p>
+      <div class="hero-actions">
+        <a href="/dashboard" class="btn btn-primary btn-large">Open Dashboard</a>
+        <a href="https://github.com/rameezimdad/baileys-api" target="_blank" class="btn btn-outline btn-large">View Source</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="logo" style="margin-bottom:8px">
+            <div class="logo-icon">WB</div>
+            Baileys API
+          </div>
+          <div class="logo-text">
+            Production WhatsApp API by Mohammad Rameez Imdad
+            <small>&copy; 2024 Rameez Scripts. MIT Licensed.</small>
+          </div>
+        </div>
+        <div>
+          <h4>Product</h4>
+          <a href="#features">Features</a>
+          <a href="#docs">Documentation</a>
+          <a href="#pricing">Pricing</a>
+          <a href="/api/docs">API Reference</a>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <a href="https://github.com/rameezimdad/baileys-api" target="_blank">GitHub</a>
+          <a href="https://www.youtube.com/@rameezimdad" target="_blank">YouTube</a>
+          <a href="https://wa.me/923224083545" target="_blank">WhatsApp</a>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <a href="#">MIT License</a>
+          <a href="CODE_OF_CONDUCT.md">Code of Conduct</a>
+          <a href="CONTRIBUTING.md">Contributing</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

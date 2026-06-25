@@ -18,10 +18,19 @@ export class MessageRepository {
       UPDATE messages SET wa_message_id = ?, message_json = ?, status = 'sent', updated_at = ?
       WHERE id = ?
     `)
+    this.delivered = db.prepare(`
+      UPDATE messages SET status = 'delivered', updated_at = ? WHERE wa_message_id = ?
+    `)
+    this.read = db.prepare(`
+      UPDATE messages SET status = 'read', updated_at = ? WHERE wa_message_id = ?
+    `)
     this.failed = db.prepare(`
       UPDATE messages SET status = 'failed', error = ?, updated_at = ? WHERE id = ?
     `)
-    this.findMessage = db.prepare('SELECT message_json FROM messages WHERE wa_message_id = ?')
+    this.findMessage = db.prepare('SELECT id, message_json FROM messages WHERE wa_message_id = ?')
+    this.findPendingReceipts = db.prepare(`
+      SELECT id, wa_message_id, team_id FROM messages WHERE wa_message_id IS NOT NULL AND status IN ('sent','delivered')
+    `)
     this.sinceCount = db.prepare(`SELECT COUNT(*) AS n FROM messages WHERE created_at >= ? AND status != 'failed'`)
 
     // queue page: queued drains FIFO (ASC), history newest first (DESC)
@@ -84,8 +93,24 @@ export class MessageRepository {
     return { id, waMessageId: waMessage.key.id, status: 'sent', sentAt: now }
   }
 
+  markDelivered(waMessageId) {
+    this.delivered.run(new Date().toISOString(), waMessageId)
+  }
+
+  markRead(waMessageId) {
+    this.read.run(new Date().toISOString(), waMessageId)
+  }
+
   markFailed(id, error) {
     this.failed.run(String(error).slice(0, 1000), new Date().toISOString(), id)
+  }
+
+  findByWaMessageId(waMessageId) {
+    return this.findMessage.get(waMessageId)
+  }
+
+  getMessagesPendingReceipts() {
+    return this.findPendingReceipts.all()
   }
 
   countSince(iso) {

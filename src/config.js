@@ -48,7 +48,25 @@ const schema = z.object({
   BURST_PAUSE_MAX_MS: z.coerce.number().int().min(0).max(900000).default(60000),
   DAILY_SEND_LIMIT: z.coerce.number().int().min(0).max(100000).default(500),
   PUBLIC_DOMAIN: z.string().trim().default(''),
-  PUBLIC_IP: z.string().trim().default('')
+  PUBLIC_IP: z.string().trim().default(''),
+  ALLOW_REGISTRATION: boolTrue,
+  MAX_TEAM_MEMBERS: z.coerce.number().int().min(1).max(1000).default(50),
+  STRIPE_SECRET_KEY: z.string().trim().default(''),
+  STRIPE_WEBHOOK_SECRET: z.string().trim().default(''),
+  STRIPE_TRIAL_DAYS: z.coerce.number().int().min(0).max(365).default(14),
+  SCHEDULER_POLL_INTERVAL_MS: z.coerce.number().int().min(1000).max(60000).default(5000),
+  WEBHOOK_RETRY_INTERVAL_MS: z.coerce.number().int().min(5000).max(86400000).default(300000),
+  QUEUE_POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(30000).default(1000),
+  QUEUE_CONCURRENCY: z.coerce.number().int().min(1).max(100).default(5),
+  QUEUE_RETRY_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(50).default(3),
+  BACKUP_DIR: z.string().trim().default('./backups'),
+  BACKUP_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(30),
+  DATABASE_TYPE: z.enum(['sqlite', 'postgres']).default('sqlite'),
+  PG_CONNECTION_STRING: z.string().default(''),
+  USE_REDIS_QUEUE: bool,
+  REDIS_URL: z.string().default(''),
+  WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(100).default(5),
+  KEY_ROTATION_DAYS: z.coerce.number().int().min(1).max(3650).default(90)
 })
 
 export const loadConfig = (env = process.env) => {
@@ -92,6 +110,24 @@ export const loadConfig = (env = process.env) => {
     burstPauseMaxMs: Math.max(cfg.BURST_PAUSE_MAX_MS, cfg.BURST_PAUSE_MIN_MS),
     dailySendLimit: cfg.DAILY_SEND_LIMIT,
     publicDomain: cfg.PUBLIC_DOMAIN || null,
-    publicIp: cfg.PUBLIC_IP || null
+    publicIp: cfg.PUBLIC_IP || null,
+    allowRegistration: cfg.ALLOW_REGISTRATION,
+    maxTeamMembers: cfg.MAX_TEAM_MEMBERS,
+    stripeSecretKey: cfg.STRIPE_SECRET_KEY || null,
+    stripeWebhookSecret: cfg.STRIPE_WEBHOOK_SECRET || null,
+    stripeTrialDays: cfg.STRIPE_TRIAL_DAYS,
+    schedulerPollIntervalMs: cfg.SCHEDULER_POLL_INTERVAL_MS,
+    webhookRetryIntervalMs: cfg.WEBHOOK_RETRY_INTERVAL_MS,
+    queuePollIntervalMs: cfg.QUEUE_POLL_INTERVAL_MS,
+    queueConcurrency: cfg.QUEUE_CONCURRENCY,
+    queueRetryMaxAttempts: cfg.QUEUE_RETRY_MAX_ATTEMPTS,
+    backupDir: cfg.BACKUP_DIR,
+    backupRetentionDays: cfg.BACKUP_RETENTION_DAYS,
+    databaseType: cfg.DATABASE_TYPE,
+    pgConnectionString: cfg.PG_CONNECTION_STRING || null,
+    useRedisQueue: cfg.USE_REDIS_QUEUE,
+    redisUrl: cfg.REDIS_URL || null,
+    workerConcurrency: cfg.WORKER_CONCURRENCY,
+    keyRotationDays: cfg.KEY_ROTATION_DAYS
   }
 }

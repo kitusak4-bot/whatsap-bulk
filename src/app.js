@@ -13,11 +13,26 @@ import express from 'express'
 import { rateLimit } from 'express-rate-limit'
 import helmet from 'helmet'
 import pinoHttp from 'pino-http'
+import swaggerUi from 'swagger-ui-express'
 import { apiKeyAuth } from './middleware/auth.js'
+import { enrichApiKey, resolveTeamRole } from './middleware/tenant.js'
 import { errorHandler, notFound } from './middleware/error-handler.js'
 import { createAdminRouter } from './routes/admin.js'
+import { createPublicAuthRouter, createProtectedAuthRouter } from './routes/auth.js'
+import { createTeamRouter } from './routes/team.js'
+import { createBillingRouter } from './routes/billing.js'
+import { createWebhookRouter } from './routes/webhooks.js'
+import { createSchedulingRouter } from './routes/scheduling.js'
+import { createContactRouter } from './routes/contacts.js'
+import { createABTestRouter } from './routes/ab-testing.js'
+import { createBrandingRouter } from './routes/branding.js'
+import { createReportingRouter } from './routes/reporting.js'
+import { enforceQuota } from './middleware/quota.js'
 import { createMessagingRouter } from './routes/messaging.js'
 import { createWhatsAppRouter } from './routes/whatsapp.js'
+import { getOpenApiSpec } from './services/api-docs.js'
+import { trackEvent } from './services/analytics.js'
+import { isSentryEnabled, getSentry } from './services/sentry.js'
 import { asyncHandler } from './utils/errors.js'
 import { fail, ok } from './utils/response.js'
 import { getPublicIp } from './utils/server-info.js'
@@ -41,7 +56,7 @@ const limiter = ({ windowMs, limit, keyGenerator, skip }) => rateLimit({
   }
 })
 
-export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp }) => {
+export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp, users, teams, audit, billing, webhooks, scheduler, contacts, abTests, branding, queue, rateLimiter, reports, backup }) => {
   const app = express()
   app.disable('x-powered-by')
   app.set('trust proxy', cfg.trustProxy)
@@ -52,6 +67,38 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp }) => {
     res.set('x-request-id', req.id)
     next()
   })
+
+  if (isSentryEnabled()) {
+    app.use(getSentry().Handlers.requestHandler())
+  }
+
+  // Serve landing page at root
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(publicDir, 'landing.html'))
+  })
+
+  // Serve the SPA dashboard at /dashboard
+  app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'))
+  })
+
+  // OpenAPI spec as JSON
+  app.get('/api/docs.json', (req, res) => {
+    res.json(getOpenApiSpec(cfg))
+  })
+
+  // Swagger UI
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(getOpenApiSpec(cfg), {
+    customSiteTitle: 'Baileys WhatsApp API - Docs',
+    customfavIcon: '/favicon.ico',
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      tryItOutEnabled: true
+    }
+  }))
+
   app.use(pinoHttp({
     logger,
     genReqId: req => req.id,
@@ -104,9 +151,9 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp }) => {
     index: 'index.html'
   }))
   app.get('/healthz', (req, res) => ok(res, { status: 'ok', whatsapp: whatsapp.getStatus().status }))
-  app.get('/api/openapi.json', (req, res) => {
-    res.sendFile(path.join(publicDir, '..', 'openapi.json'))
-  })
+
+  // Public auth routes (no API key required) — register and login only
+  app.use('/api/auth', createPublicAuthRouter({ users, teams, apiKeys, audit }))
 
   app.use('/api', limiter({
     windowMs: cfg.apiRateLimitWindowMs,
@@ -119,6 +166,10 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp }) => {
     skip: isMonitor
   }))
   app.use('/api', apiKeyAuth(apiKeys))
+
+  // Tenant enrichment — adds user_id, team_id, teamRole to req.apiKey
+  app.use('/api', enrichApiKey(apiKeys), resolveTeamRole(teams))
+
   app.use('/api', limiter({
     windowMs: cfg.apiRateLimitWindowMs,
     limit: cfg.apiRateLimitMax,
@@ -131,12 +182,31 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp }) => {
     keyGenerator: req => req.apiKey.id
   }))
 
+  // Analytics tracking (non-blocking, fires after response)
+  app.use('/api', (req, res, next) => {
+    res.on('finish', () => {
+      const keyId = req.apiKey?.id || 'anonymous'
+      const skipPaths = ['/api/qr', '/api/status', '/api/me', '/api/server-info', '/api/docs', '/api/docs.json']
+      if (!skipPaths.some(p => req.path.startsWith(p)) && res.statusCode < 500) {
+        trackEvent(keyId, 'api_request', {
+          method: req.method,
+          path: req.path.split('/').slice(0, 4).join('/'),
+          status: res.statusCode,
+          duration: Math.round(Number(process.hrtime.bigint() - req.startAt) / 1e6)
+        })
+      }
+    })
+    next()
+  })
+
   app.get('/api/me', (req, res) => ok(res, {
     id: req.apiKey.id,
     name: req.apiKey.name,
     role: req.apiKey.role,
     prefix: req.apiKey.prefix,
-    expiresAt: req.apiKey.expiresAt || null
+    expiresAt: req.apiKey.expiresAt || null,
+    teamId: req.apiKey.teamId || null,
+    userId: req.apiKey.userId || null
   }))
   app.get('/api/server-info', asyncHandler(async (req, res) => ok(res, {
     domain: cfg.publicDomain || null,
@@ -176,8 +246,61 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp }) => {
     })
     ok(res, { totalCampaigns: files.length, reports })
   }))
+  // Quota enforcement — intercepts send endpoints
+  app.use('/api', enforceQuota({ billing, webhooks }))
+
   app.use('/api', createMessagingRouter(whatsapp, cfg))
+
+  // Protected auth, team, and billing routes (require API key + tenant enrichment)
+  app.use('/api/auth', createProtectedAuthRouter({ users, teams }))
+  app.use('/api/team', createTeamRouter({ teams, apiKeys, audit }))
+  app.use('/api/billing', createBillingRouter({ billing, audit }))
+  app.use('/api/webhooks', createWebhookRouter({ webhooks, audit }))
+  app.use('/api/schedule', createSchedulingRouter({ scheduler, audit }))
+  app.use('/api/contacts', createContactRouter({ contacts, audit }))
+  app.use('/api/ab-tests', createABTestRouter({ abTests, audit }))
+  app.use('/api/branding', createBrandingRouter({ branding }))
+  app.use('/api/reports', createReportingRouter({ reports, audit }))
+
+  // Queue status
+  app.get('/api/queue/stats', (req, res) => ok(res, queue.getStats()))
+
+  // Backup
+  app.post('/api/backup', asyncHandler(async (req, res) => {
+    const result = backup.createBackup()
+    ok(res, result)
+  }))
+  app.get('/api/backup/info', asyncHandler(async (req, res) => {
+    ok(res, backup.getInfo())
+  }))
+  app.get('/api/backup/list', asyncHandler(async (req, res) => {
+    ok(res, backup.listBackups())
+  }))
+  app.post('/api/backup/restore', asyncHandler(async (req, res) => {
+    const { path: backupPath } = req.body
+    if (!backupPath) return fail(res, 400, 'MISSING_PATH', 'Backup path is required')
+    const result = backup.restore(backupPath)
+    ok(res, result)
+  }))
+
+  // API key management
+  app.post('/api/admin/keys/rotate', asyncHandler(async (req, res) => {
+    const { id } = req.body
+    if (!id) return fail(res, 400, 'MISSING_ID', 'Key ID is required')
+    const result = apiKeys.rotate(id)
+    ok(res, result)
+  }))
+  app.post('/api/admin/keys/extend', asyncHandler(async (req, res) => {
+    const { id, days } = req.body
+    if (!id) return fail(res, 400, 'MISSING_ID', 'Key ID is required')
+    const result = apiKeys.extendExpiry(id, days || 90)
+    ok(res, result)
+  }))
+
   app.use(notFound)
   app.use(errorHandler(logs))
+  if (isSentryEnabled()) {
+    app.use(getSentry().Handlers.errorHandler())
+  }
   return app
 }

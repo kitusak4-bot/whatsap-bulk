@@ -1,153 +1,270 @@
-# whatsap-bulk
+# Baileys WhatsApp Send API
 
-Production WhatsApp REST API with anti-ban protection, campaign dashboard, and real-time analytics.
+**Production-ready WhatsApp REST API** with anti-ban protection, message queuing, campaign management, and Docker support.
 
-[![CI](https://github.com/kitusak4-bot/whatsap-bulk/actions/workflows/ci.yml/badge.svg)](https://github.com/kitusak4-bot/whatsap-bulk/actions/workflows/ci.yml)
-[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org)
-[![License](https://img.shields.io/badge/license-MIT-blue)](#license)
+Send text, images, documents, audio, and location messages from any app with a simple HTTP call. Scan a QR once — done.
 
-Send WhatsApp messages from any application with a single HTTP call. Scan a QR code once and start sending.
+Developed by [Mohammad Rameez Imdad](https://www.youtube.com/@rameezimdad) (Rameez Scripts)
 
-## Key Features
+[![CI](https://github.com/rameezimdad/baileys-api/actions/workflows/ci.yml/badge.svg)](https://github.com/rameezimdad/baileys-api/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
 
-- **REST API** — send text, images, documents, audio, locations via HTTP
-- **Anti-ban protection** — random 5-9s delays, typing simulation, burst pauses, daily limits
-- **Campaign engine** — bulk send from CSV with progress tracking
-- **Dashboard** — real-time status, message queue, analytics, contact management
-- **API key auth** — admin and per-app keys with role-based access
-- **Fire-and-forget** — messages queue automatically, no rate-limit worries
+---
 
-## Quick Start
+## 📋 Table of Contents
 
-### Docker (recommended)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Docker Deployment](#docker-deployment)
+- [API Reference](#api-reference)
+- [Dashboard](#dashboard)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## ✨ Features
+
+| Feature | Description |
+|---|---|
+| **Simple REST API** | Send text, images, documents, audio, and locations via HTTP |
+| **Anti-Ban Protection** | Random 5–9s delays, typing simulation, burst cool-downs, daily limits |
+| **Bulk Campaigns** | Upload CSV contacts, send with safe spacing |
+| **API Key Auth** | HMAC-hashed keys with admin/user roles |
+| **Message Queuing** | Fire-and-forget — extra messages queue and send automatically |
+| **Recipient Verification** | Checks number is on WhatsApp before sending |
+| **Docker Support** | One-command deploy with persistent volumes |
+| **Analytics Dashboard** | Real-time status, message history, campaign reports |
+| **Google Sheets Integration** | Use from Apps Script — see [`clients/apps-script`](./clients/apps-script) |
+| **Swagger/OpenAPI** | Interactive API docs at `/api/docs` |
+| **Error Tracking** | Optional Sentry integration |
+| **Product Analytics** | Optional PostHog integration |
+
+---
+
+## ⚡ Quick Start
+
+### Option 1: Docker (Recommended)
 
 ```bash
-git clone https://github.com/kitusak4-bot/whatsap-bulk.git
-cd whatsap-bulk
+# Clone the repo
+git clone https://github.com/rameezimdad/baileys-api.git
+cd baileys-api
 
-# Generate secrets
-echo "ADMIN_API_KEY=$(openssl rand -base64 48)" >> .env
-echo "API_KEY_PEPPER=$(openssl rand -base64 48)" >> .env
-
-docker compose up -d
-```
-
-Open `http://localhost:3000` → scan the QR code → start sending.
-
-### Manual install
-
-```bash
-git clone https://github.com/kitusak4-bot/whatsap-bulk.git
-cd whatsap-bulk
-npm install
+# Create .env with your keys
 cp .env.example .env
 # Edit .env — set ADMIN_API_KEY and API_KEY_PEPPER (min 32 chars each)
-node src/server.js
+
+# Start with Docker Compose
+docker compose up -d
+
+# Open the dashboard
+open http://localhost:3000/dashboard
 ```
 
-## API Overview
+### Option 2: VPS Install (Ubuntu 24.04/22.04)
 
-All endpoints require the `X-API-Key` header.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/send-message` | Send a text message |
-| POST | `/api/send-image` | Send an image (URL or upload) |
-| POST | `/api/send-document` | Send a PDF, Office doc, zip |
-| POST | `/api/send-audio` | Send audio / voice note |
-| POST | `/api/send-location` | Send a location pin |
-| GET | `/api/status` | Connection + queue status |
-| GET | `/api/messages` | Message queue + history |
-| GET | `/api/me` | Your API key info |
-| GET | `/api/qr` | QR code for WhatsApp linking |
-| GET | `/api/server-info` | Server domain / IP info |
-| POST | `/api/logout` | Unlink WhatsApp session (admin) |
-| POST | `/api/admin/generate-key` | Create a new API key (admin) |
-| POST | `/api/admin/revoke-key` | Revoke an API key (admin) |
-| GET | `/api/admin/list-keys` | List all keys (admin) |
-
-### Example: send a message
+> Needs: a VPS with **Ubuntu 24.04** (or 22.04), logged in as `root`.
 
 ```bash
-curl -X POST http://localhost:3000/api/send-message \
-  -H "X-API-Key: YOUR_API_KEY" \
+curl -fsSLo i.sh https://raw.githubusercontent.com/rameezimdad/baileys-api/master/deploy/vps-install.sh && bash i.sh
+```
+
+Wait 3–5 min. It prints your **ADMIN API KEY** — copy and save it. Open `http://YOUR_VPS_IP/` → paste the key → scan the QR with WhatsApp.
+
+### Option 3: Node.js (Development)
+
+```bash
+npm install
+cp .env.example .env
+# Edit .env — set ADMIN_API_KEY and API_KEY_PEPPER
+npm run dev
+```
+
+---
+
+## 🐳 Docker Deployment
+
+```bash
+# Build and start
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop
+docker compose down
+
+# Full reset (destroys data)
+docker compose down -v
+```
+
+**Environment variables** are passed via `docker-compose.yml` or a `.env` file in the project root. Volume mounts persist data, logs, and campaign files.
+
+### Docker Compose Configuration
+
+```yaml
+# docker-compose.yml (included in repo)
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - baileys_data:/app/data
+      - baileys_logs:/app/logs
+      - baileys_campaigns:/app/campaigns
+    environment:
+      - ADMIN_API_KEY=${ADMIN_API_KEY:?required}
+      - API_KEY_PEPPER=${API_KEY_PEPPER:?required}
+```
+
+---
+
+## 📡 API Reference
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/healthz` | Public | Health check |
+| `GET` | `/api/status` | API Key | WhatsApp connection status |
+| `GET` | `/api/qr` | API Key | QR code (JSON or `?format=png`) |
+| `POST` | `/api/logout` | Admin | Logout WhatsApp session |
+| `POST` | `/api/send-message` | API Key | Send text message |
+| `POST` | `/api/send-image` | API Key | Send image (multipart) |
+| `POST` | `/api/send-document` | API Key | Send document (multipart) |
+| `POST` | `/api/send-audio` | API Key | Send audio/voice note |
+| `POST` | `/api/send-location` | API Key | Send location pin |
+| `GET` | `/api/messages` | API Key | Message queue/history |
+| `GET` | `/api/campaigns/recent` | API Key | Recent campaign reports |
+| `GET` | `/api/me` | API Key | Current key info |
+| `GET` | `/api/server-info` | API Key | Server details |
+| `POST` | `/api/admin/generate-key` | Admin | Create API key |
+| `POST` | `/api/admin/revoke-key` | Admin | Revoke API key |
+| `GET` | `/api/admin/list-keys` | Admin | List API keys |
+| `GET` | `/api/docs` | - | Interactive Swagger docs |
+| `GET` | `/api/docs.json` | - | OpenAPI spec |
+
+### Authentication
+
+Pass your API key via the `X-API-Key` header or `Authorization: Bearer <key>`:
+
+```bash
+curl -X POST /api/send-message \
+  -H "X-API-Key: wapi_your_key_here" \
   -H "Content-Type: application/json" \
-  -d '{"to":"923001234567","message":"Hello from API"}'
+  -d '{"to":"923001234567","message":"Hello"}'
 ```
 
-Response:
-```json
-{
-  "success": true,
-  "data": { "status": "sent", "id": "msg_abc123" }
-}
+### Sending Messages
+
+```bash
+# Text
+curl -X POST http://localhost:3000/api/send-message \
+  -H "X-API-Key: wapi_key" \
+  -d '{"to":"923001234567","message":"Hello"}'
+
+# Image
+curl -X POST http://localhost:3000/api/send-image \
+  -H "X-API-Key: wapi_key" \
+  -F "to=923001234567" -F "file=@photo.jpg" -F "caption=Nice!"
+
+# Location
+curl -X POST http://localhost:3000/api/send-location \
+  -H "X-API-Key: wapi_key" \
+  -d '{"to":"923001234567","latitude":24.8607,"longitude":67.0011}'
 ```
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────┐
-│  Port 3000 — Main API + Dashboard           │
-│  ├── Express + Baileys (WhatsApp Web)       │
-│  ├── SQLite (messages, keys, logs)          │
-│  ├── Anti-ban queue (p-queue)               │
-│  └── Static dashboard (public/index.html)   │
-├─────────────────────────────────────────────┤
-│  Port 4000 — Campaign Dashboard (optional)  │
-│  ├── Bulk campaign launcher                 │
-│  ├── Campaign reports                       │
-│  └── Separate auth system                   │
-└─────────────────────────────────────────────┘
-```
-
-## Configuration
-
-All settings are in `.env`. Key options:
+### Anti-Ban Parameters
 
 | Variable | Default | Description |
-|----------|---------|-------------|
-| `MESSAGE_DELAY_MIN_MS` | 5000 | Min gap between messages |
-| `MESSAGE_DELAY_MAX_MS` | 9000 | Max gap between messages |
-| `TYPING_SIMULATION` | true | Show "typing..." before sends |
-| `BURST_SIZE` | 20 | Messages before a long pause |
-| `DAILY_SEND_LIMIT` | 500 | Max messages per day (UTC) |
-| `CHECK_RECIPIENT_EXISTS` | true | Verify number is on WhatsApp |
+|---|---|---|
+| `MESSAGE_DELAY_MIN_MS` | 5000 | Minimum gap between messages |
+| `MESSAGE_DELAY_MAX_MS` | 9000 | Maximum gap between messages |
+| `TYPING_SIMULATION` | true | Show "typing..." before each send |
+| `BURST_SIZE` | 20 | Messages before burst cool-down |
+| `BURST_PAUSE_MIN_MS` | 30000 | Minimum burst pause |
+| `BURST_PAUSE_MAX_MS` | 60000 | Maximum burst pause |
+| `DAILY_SEND_LIMIT` | 500 | Messages per day (0 = unlimited) |
 
-## Deployment
+All configurable in `.env`.
 
-### VPS (Ubuntu)
+---
+
+## 🖥️ Dashboard
+
+Access the SPA dashboard at `/dashboard` after deploying:
+
+```
+http://localhost:3000/dashboard
+```
+
+Features:
+- WhatsApp connection status with auto-polling
+- QR code display with countdown
+- Test message send form
+- Message queue with status filters
+- Campaign creation (CSV upload + message template)
+- Campaign reports with analytics
+- API key management
+- Message templates (localStorage)
+- Contacts management
+- 7-day activity chart
+- Dark mode
+
+Requires an API key to unlock.
+
+---
+
+## 📚 Documentation
+
+- **Swagger UI**: [`/api/docs`](http://localhost:3000/api/docs) — interactive API reference
+- **OpenAPI Spec**: [`/api/docs.json`](http://localhost:3000/api/docs.json) — raw JSON spec
+- **Install Guide**: [`INSTALL.md`](INSTALL.md)
+- **Apps Script Client**: [`clients/apps-script/`](./clients/apps-script)
+- **Contributing**: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- **Code of Conduct**: [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
+
+---
+
+## 🤝 Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Key rules:
+
+- **Do not modify** the WhatsApp send flow, Baileys connection, or session persistence
+- New features must be new modules, services, wrappers, or middleware
+- Maintain backward compatibility
+
+---
+
+## 🛠️ Daily Commands
 
 ```bash
-curl -fsSLo i.sh https://raw.githubusercontent.com/kitusak4-bot/whatsap-bulk/master/deploy/vps-install.sh && bash i.sh
+# PM2
+pm2 status                    # Process status
+pm2 logs baileys-api           # View logs
+pm2 restart baileys-api        # Restart
+
+# Docker
+docker compose logs -f         # View logs
+docker compose restart         # Restart
+docker compose down            # Stop
+
+# Environment
+grep ADMIN_API_KEY .env        # Find admin key
 ```
 
-### Update
+---
 
-```bash
-curl -fsSLo u.sh https://raw.githubusercontent.com/kitusak4-bot/whatsap-bulk/master/deploy/vps-update.sh && bash u.sh
-```
+## 📄 License
 
-## Project Structure
+MIT License — see [LICENSE](LICENSE).
 
-```
-├── src/                  # Main API server
-│   ├── server.js         # Entry point
-│   ├── app.js            # Express app setup
-│   ├── config.js         # Zod-validated env config
-│   ├── routes/           # API routes
-│   ├── services/         # Business logic
-│   ├── middleware/        # Auth, validation, error handling
-│   └── db/               # SQLite database
-├── public/               # Dashboard frontend
-│   └── index.html        # Single-file SPA
-├── dashboard/            # Campaign dashboard (port 4000)
-├── campaigns/            # Campaign worker + reports
-├── deploy/               # VPS install/update scripts
-├── test/                 # Test suite
-├── Dockerfile            # Container build
-└── docker-compose.yml    # Multi-service orchestration
-```
+---
 
-## License
+## 🙋 Support
 
-MIT
+- **YouTube**: [@rameezimdad](https://www.youtube.com/@rameezimdad)
+- **WhatsApp**: [Chat](https://wa.me/923224083545)
+- **GitHub Issues**: [Create an issue](https://github.com/rameezimdad/baileys-api/issues)

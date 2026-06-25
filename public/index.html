@@ -509,6 +509,115 @@
   }
   @media (max-width: 520px) { .kpi-row { grid-template-columns: 1fr; } }
 
+  /* ===== tooltips ===== */
+  [data-tip] {
+    position: relative; cursor: help;
+  }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translate(-50%) scale(.9);
+    white-space: nowrap; font-size: 11.5px; font-weight: 500;
+    background: var(--ink); color: var(--bg);
+    padding: 5px 11px; border-radius: 6px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .15s, transform .15s;
+    z-index: 999;
+  }
+  [data-tip]:hover::after {
+    opacity: 1; transform: translate(-50%) scale(1);
+  }
+  [data-tip].tip-right::after { left: 100%; bottom: auto; top: 50%; transform: translate(6px,-50%) scale(.9); }
+  [data-tip].tip-right:hover::after { transform: translate(6px,-50%) scale(1); }
+
+  /* ===== settings page ===== */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .settings-grid .card { margin: 0; }
+  .settings-card { background: var(--card-bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .settings-card .sc-head { padding: 14px 16px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
+  .settings-card .sc-head i { color: var(--blue); width: 18px; text-align: center; }
+  .settings-card .sc-body { padding: 16px; }
+  .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); gap: 12px; }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row .sl { font-size: 13px; color: var(--ink); }
+  .settings-row .sl small { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
+  .settings-row .sr { font-size: 13px; color: var(--muted); text-align: right; word-break: break-all; }
+  .settings-row .sr code { font-size: 12px; background: var(--bg); padding: 2px 8px; border-radius: 4px; color: var(--navy); }
+  .settings-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+  .settings-badge.admin { background: var(--amber-soft); color: var(--amber); }
+  .settings-badge.api { background: var(--blue-soft); color: var(--blue); }
+  @media (max-width:720px) { .settings-grid { grid-template-columns: 1fr; } }
+
+  /* ===== onboarding overlay ===== */
+  .onboard-overlay {
+    display: none; position: fixed; inset: 0; z-index: 3000;
+    background: rgba(0,0,0,.65); backdrop-filter: blur(6px);
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .onboard-overlay.show { display: flex; }
+  .onboard-box {
+    background: var(--card-bg); border: 1px solid var(--line);
+    border-radius: 20px; max-width: 540px; width: 100%;
+    box-shadow: 0 24px 80px rgba(0,0,0,.3);
+    animation: modalIn .35s ease both;
+    overflow: hidden;
+  }
+  .onboard-header {
+    background: var(--navy); color: #fff; text-align: center;
+    padding: 32px 24px 24px;
+  }
+  .onboard-header .ob-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(255,255,255,.15); margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+  }
+  .onboard-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .onboard-header p { font-size: 13.5px; opacity: .8; line-height: 1.5; }
+  .onboard-steps { padding: 24px; }
+  .onboard-step { display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start; }
+  .onboard-step:last-child { margin-bottom: 0; }
+  .onboard-step .ob-num {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    background: var(--blue-soft); color: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+  }
+  .onboard-step .ob-num.done { background: var(--green-soft); color: var(--green); }
+  .onboard-step .ob-content { flex: 1; }
+  .onboard-step .ob-content strong { display: block; font-size: 13.5px; margin-bottom: 3px; }
+  .onboard-step .ob-content span { font-size: 12.5px; color: var(--muted); line-height: 1.5; display: block; }
+  .onboard-footer {
+    padding: 0 24px 24px; display: flex; gap: 10px; justify-content: flex-end;
+  }
+
+  /* ===== enhanced analytics stats ===== */
+  .analytics-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .analytics-mini .stat { background: var(--bg); border-radius: 10px; padding: 14px; text-align: center; }
+  .analytics-mini .stat .num { font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+  .analytics-mini .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .analytics-mini .stat.green .num { color: var(--green); }
+  .analytics-mini .stat.red .num { color: var(--red); }
+  .analytics-mini .stat.blue .num { color: var(--blue); }
+  @media (max-width:520px) { .analytics-mini { grid-template-columns: 1fr 1fr; } }
+
+  /* ===== mobile refinements ===== */
+  @media (max-width:400px) {
+    .navbar { padding: 8px 10px; gap: 8px; }
+    main { padding: 14px 10px 30px; }
+    .card-body { padding: 14px 12px; }
+    .card-head { padding: 11px 14px; font-size: 13px; }
+    .small-box .inner { padding: 12px 14px; }
+    .small-box h3 { font-size: 20px; }
+    .camp-launch { grid-template-columns: 1fr; }
+    .gen-row { grid-template-columns: 1fr; }
+    .q-table { font-size: 12px; }
+    .q-table th, .q-table td { padding: 7px 6px; }
+    .key-table th, .key-table td { padding: 7px 6px; font-size: 12px; }
+  }
+  body.dark .onboard-header { background: #0b0d3a; }
+  body.dark .settings-card .sc-head { background: rgba(0,0,0,.2); }
+
   /* ===== custom scrollbar ===== */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
@@ -612,6 +721,43 @@
   }
   #darkToggle:hover { background: var(--blue-soft); color: var(--blue); border-color: var(--blue); }
   body.dark #darkToggle { border-color: var(--line); }
+
+  /* ===== gate tabs ===== */
+  .gate-tabs { display:flex;gap:4px;margin-bottom:18px;background:var(--bg);border-radius:8px;padding:3px }
+  .gate-tab { flex:1;padding:9px 12px;font-size:12.5px;font-weight:600;border:none;border-radius:6px;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s }
+  .gate-tab.active { background:var(--card-bg);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08) }
+  .gate-pane { display:block }
+  .gate-pane.hidden { display:none }
+
+  /* ===== team page ===== */
+  .invite-form { display:flex;gap:10px;align-items:end;flex-wrap:wrap }
+  .invite-form .field { margin:0;min-width:120px }
+  .invite-form select {
+    width:100%;padding:11px 13px;
+    border:1px solid var(--line);border-radius:7px;
+    font-family:inherit;color:var(--ink);
+    background:var(--input-bg);outline:none;
+    transition:border .15s,box-shadow .15s;cursor:pointer;
+  }
+  .invite-form select:focus { border-color:var(--blue);box-shadow:0 0 0 3px rgba(18,19,88,.12) }
+  .team-table { width:100%;border-collapse:collapse;font-size:13px }
+  .team-table th { text-align:left;padding:10px;background:var(--blue-soft);color:var(--navy);font-size:12px;white-space:nowrap }
+  .team-table td { padding:10px;border-bottom:1px solid var(--line);vertical-align:middle }
+  .team-role-badge { display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px }
+  .team-role-badge.owner { background:var(--amber-soft);color:var(--amber) }
+  .team-role-badge.admin { background:var(--blue-soft);color:var(--blue) }
+  .team-role-badge.member { background:var(--green-soft);color:var(--green) }
+  .team-btn { border:none;border-radius:5px;padding:5px 10px;font-size:11.5px;cursor:pointer;transition:background .1s }
+  .team-btn.danger { background:var(--red-soft);color:var(--red) }
+  .team-btn.danger:hover { background:var(--red);color:#fff }
+  .team-btn.promote { background:var(--blue-soft);color:var(--blue) }
+  .team-btn.promote:hover { background:var(--blue);color:#fff }
+  .audit-table { width:100%;border-collapse:collapse;font-size:13px }
+  .audit-table th { text-align:left;padding:10px;background:var(--blue-soft);color:var(--navy);font-size:12px;white-space:nowrap }
+  .audit-table td { padding:10px;border-bottom:1px solid var(--line);vertical-align:top }
+  .audit-table .audit-action { font-weight:600;font-size:12.5px }
+  .audit-table .audit-detail { font-size:12px;color:var(--muted);max-width:300px }
+  .audit-table .audit-time { font-size:11.5px;color:var(--muted);white-space:nowrap }
 
   /* ===== dark overrides ===== */
   body.dark .nav-burger:hover { background: var(--blue-soft); }
@@ -736,6 +882,39 @@
   .chart-wrap canvas { width: 100% !important; height: auto !important; max-height: 200px; border-radius: 8px; }
   .chart-empty { text-align: center; padding: 30px 10px; color: var(--muted); font-size: 13px; }
   .chart-empty i { font-size: 28px; display: block; margin-bottom: 8px; color: var(--line); }
+
+  /* ===== billing page ===== */
+  .billing-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px }
+  .plan-card { background:var(--card-bg);border:2px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;transition:border-color .2s,box-shadow .2s }
+  .plan-card.featured { border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--card-shadow) }
+  .plan-card .plan-name { font-size:16px;font-weight:700;margin-bottom:4px }
+  .plan-card .plan-price { font-size:28px;font-weight:800;color:var(--ink);margin-bottom:12px }
+  .plan-card .plan-price small { font-size:13px;font-weight:400;color:var(--muted) }
+  .plan-card .plan-features { list-style:none;padding:0;margin:0 0 16px;flex:1 }
+  .plan-card .plan-features li { padding:5px 0;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:8px }
+  .plan-card .plan-features li i { width:16px;text-align:center;color:var(--green);font-size:12px }
+  .plan-card .plan-features li i.fa-xmark { color:var(--muted) }
+  .plan-card .plan-action { margin-top:auto }
+  .plan-card .plan-action .btn { width:100%;font-size:13px;padding:9px 14px }
+  .plan-badge { display:inline-block;background:var(--blue);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;margin-bottom:10px }
+  .usage-meter { background:var(--bg);border-radius:8px;padding:16px }
+  .usage-meter .meter-label { font-size:14px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between }
+  .usage-meter .track { height:10px;background:var(--line);border-radius:999px;overflow:hidden }
+  .usage-meter .track .bar { height:100%;border-radius:999px;transition:width .4s ease }
+  .usage-meter .track .bar.green { background:var(--green) }
+  .usage-meter .track .bar.amber { background:var(--amber) }
+  .usage-meter .track .bar.red { background:var(--red) }
+  .billing-info { display:grid;grid-template-columns:1fr 1fr;gap:14px }
+  .billing-info .bi-item { padding:12px;background:var(--bg);border-radius:8px }
+  .billing-info .bi-item .bi-label { font-size:11.5px;color:var(--muted);margin-bottom:4px }
+  .billing-info .bi-item .bi-value { font-size:15px;font-weight:600 }
+  .subscription-status { display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 12px;border-radius:999px }
+  .subscription-status.active { background:var(--green-soft);color:var(--green) }
+  .subscription-status.canceled { background:var(--red-soft);color:var(--red) }
+  .subscription-status.past_due { background:var(--amber-soft);color:var(--amber) }
+  .subscription-status.trialing { background:var(--blue-soft);color:var(--blue) }
+  @media (max-width:860px) { .billing-grid { grid-template-columns:repeat(2,1fr) } }
+  @media (max-width:520px) { .billing-grid { grid-template-columns:1fr } .billing-info { grid-template-columns:1fr } }
 </style>
 </head>
 <body>
@@ -758,6 +937,12 @@
     <li><button data-page="contacts"><i class="fa-solid fa-address-book"></i><span>Contacts</span></button></li>
     <li><button data-page="docs"><i class="fa-solid fa-book"></i><span>API Docs</span></button></li>
     <li><button data-page="keys"><i class="fa-solid fa-key"></i><span>API Keys</span></button></li>
+    <li class="sec">System</li>
+    <li><button data-page="billing"><i class="fa-solid fa-credit-card"></i><span>Billing</span></button></li>
+    <li><button data-page="settings"><i class="fa-solid fa-gear"></i><span>Settings</span></button></li>
+    <li><hr class="sb-divider"></li>
+    <li><span class="sec">Organization</span></li>
+    <li><button data-page="team"><i class="fa-solid fa-users"></i><span>Team</span></button></li>
   </ul>
   <div class="sb-foot">
     <a class="wa" href="https://wa.me/923224083545" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Custom Projects</a>
@@ -795,16 +980,67 @@
         <div class="card-body">
           <div class="lock-icon"><i class="fa-solid fa-lock"></i></div>
           <h2>Unlock Dashboard</h2>
-          <p class="hint">Enter your API key (admin or api role). It is stored only in this browser.</p>
-          <div class="alert error" id="gateAlert"><i class="fa-solid fa-circle-exclamation"></i><span id="gateAlertText"></span></div>
-          <div class="field">
-            <label><i class="fa-solid fa-key"></i> API Key</label>
-            <div style="display:flex;gap:8px">
-              <input type="password" id="keyInput" placeholder="wapi_… or bootstrap admin key" autocomplete="off" style="flex:1">
-              <button class="btn" id="gateCopyBtn" title="Paste from clipboard" style="padding:11px 14px;flex-shrink:0" type="button"><i class="fa-solid fa-paste"></i></button>
+          <p class="hint">Enter your API key or sign in to your account.</p>
+
+          <div class="gate-tabs">
+            <button class="gate-tab active" data-auth="key">API Key</button>
+            <button class="gate-tab" data-auth="login">Sign In</button>
+            <button class="gate-tab" data-auth="register">Create Account</button>
+          </div>
+
+          <!-- API Key pane -->
+          <div class="gate-pane" data-auth="key">
+            <div class="alert error" id="gateAlert"><i class="fa-solid fa-circle-exclamation"></i><span id="gateAlertText"></span></div>
+            <div class="field">
+              <label><i class="fa-solid fa-key"></i> API Key</label>
+              <div style="display:flex;gap:8px">
+                <input type="password" id="keyInput" placeholder="wapi_… or bootstrap admin key" autocomplete="off" style="flex:1">
+                <button class="btn" id="gateCopyBtn" title="Paste from clipboard" style="padding:11px 14px;flex-shrink:0" type="button"><i class="fa-solid fa-paste"></i></button>
+              </div>
+            </div>
+            <button class="btn block" id="unlockBtn"><i class="fa-solid fa-unlock"></i> Unlock</button>
+          </div>
+
+          <!-- Login pane -->
+          <div class="gate-pane hidden" data-auth="login">
+            <div class="alert error" id="loginAlert"><i class="fa-solid fa-circle-exclamation"></i><span id="loginAlertText"></span></div>
+            <div class="field">
+              <label><i class="fa-solid fa-envelope"></i> Email</label>
+              <input type="email" id="loginEmail" placeholder="you@example.com">
+            </div>
+            <div class="field">
+              <label><i class="fa-solid fa-lock"></i> Password</label>
+              <input type="password" id="loginPassword" placeholder="••••••••">
+            </div>
+            <button class="btn block" id="loginBtn"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
+            <div id="loginTeams" class="hidden" style="margin-top:16px">
+              <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--navy)">Choose a team API key:</label>
+              <div id="loginTeamList"></div>
             </div>
           </div>
-          <button class="btn block" id="unlockBtn"><i class="fa-solid fa-unlock"></i> Unlock</button>
+
+          <!-- Register pane -->
+          <div class="gate-pane hidden" data-auth="register">
+            <div class="alert error" id="registerAlert"><i class="fa-solid fa-circle-exclamation"></i><span id="registerAlertText"></span></div>
+            <div class="field">
+              <label><i class="fa-solid fa-user"></i> Name</label>
+              <input type="text" id="registerName" placeholder="Your name">
+            </div>
+            <div class="field">
+              <label><i class="fa-solid fa-envelope"></i> Email</label>
+              <input type="email" id="registerEmail" placeholder="you@example.com">
+            </div>
+            <div class="field">
+              <label><i class="fa-solid fa-lock"></i> Password (min 8 characters)</label>
+              <input type="password" id="registerPassword" placeholder="••••••••">
+            </div>
+            <div class="field">
+              <label><i class="fa-solid fa-users"></i> Team Name (optional)</label>
+              <input type="text" id="registerTeam" placeholder="My Organization">
+            </div>
+            <button class="btn block" id="registerBtn"><i class="fa-solid fa-user-plus"></i> Create Account &amp; Unlock</button>
+          </div>
+
         </div>
       </div>
     </section>
@@ -841,6 +1077,11 @@
         <div class="card">
           <div class="card-head"><i class="fa-solid fa-chart-bar"></i> Send Activity <span class="right" id="chartRange">last 7 days</span></div>
           <div class="card-body">
+            <div class="analytics-mini">
+              <div class="stat blue"><div class="num" id="statTotal">—</div><div class="lbl">Total Sent</div></div>
+              <div class="stat green"><div class="num" id="statRate">—</div><div class="lbl">Success Rate</div></div>
+              <div class="stat"><div class="num" id="statDaily">—</div><div class="lbl">Avg/Day</div></div>
+            </div>
             <div class="chart-wrap" id="chartWrap">
               <canvas id="sendChart" height="160"></canvas>
               <div class="chart-empty hidden" id="chartEmpty"><i class="fa-solid fa-chart-simple"></i>No send data yet — send a message to see activity.</div>
@@ -1098,6 +1339,89 @@
         </div>
       </div>
 
+      <!-- ============ PAGE: settings ============ -->
+      <div class="page" id="page-settings">
+        <div class="settings-grid">
+          <div class="settings-card">
+            <div class="sc-head"><i class="fa-solid fa-id-card"></i> Account</div>
+            <div class="sc-body">
+              <div class="settings-row">
+                <div class="sl">Key Name <small>Label assigned to your API key</small></div>
+                <div class="sr"><code id="setKeyName">—</code></div>
+              </div>
+              <div class="settings-row">
+                <div class="sl">Role <small>Access level of your key</small></div>
+                <div class="sr"><span class="settings-badge" id="setKeyRole">—</span></div>
+              </div>
+              <div class="settings-row">
+                <div class="sl">Key Prefix <small>Public identifier of your key</small></div>
+                <div class="sr"><code id="setKeyPrefix">—</code></div>
+              </div>
+              <div class="settings-row">
+                <div class="sl">Key ID <small>Internal identifier</small></div>
+                <div class="sr"><code id="setKeyId" style="font-size:11px">—</code></div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="sc-head"><i class="fa-solid fa-palette"></i> Appearance</div>
+            <div class="sc-body">
+              <div class="settings-row">
+                <div class="sl">Theme <small>Switch between light and dark</small></div>
+                <div class="sr">
+                  <div class="role-toggle" id="themeToggle" style="display:inline-flex">
+                    <button type="button" data-theme="light" id="themeLightBtn"><i class="fa-solid fa-sun"></i> Light</button>
+                    <button type="button" data-theme="dark" id="themeDarkBtn"><i class="fa-solid fa-moon"></i> Dark</button>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="sl">Sidebar <small>Compact or full sidebar</small></div>
+                <div class="sr">
+                  <button class="btn" id="setToggleSidebar" style="font-size:12px;padding:6px 12px"><i class="fa-solid fa-bars"></i> Toggle</button>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="sl">API Key Storage <small>Your key is stored in browser localStorage</small></div>
+                <div class="sr" style="font-size:12px;color:var(--green)"><i class="fa-solid fa-check-circle"></i> Local only</div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="sc-head"><i class="fa-solid fa-shield-halved"></i> Anti-Ban Configuration</div>
+            <div class="sc-body" id="setAntiBanBody">
+              <div class="settings-row"><div class="sl">Anti-Ban Gap <small>Random delay between messages</small></div><div class="sr"><code id="setAbGap">5–9s</code></div></div>
+              <div class="settings-row"><div class="sl">Typing Simulation <small>Shows typing indicator before each send</small></div><div class="sr"><code id="setAbTyping">enabled</code></div></div>
+              <div class="settings-row"><div class="sl">Burst Size <small>Messages before cool-down pause</small></div><div class="sr"><code id="setAbBurst">20</code></div></div>
+              <div class="settings-row"><div class="sl">Daily Limit <small>Message cap per UTC day</small></div><div class="sr"><code id="setAbDaily">500/day</code></div></div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="sc-head"><i class="fa-solid fa-circle-info"></i> About</div>
+            <div class="sc-body">
+              <div class="settings-row">
+                <div class="sl">Version <small>Software version</small></div>
+                <div class="sr"><code>1.0.0</code></div>
+              </div>
+              <div class="settings-row">
+                <div class="sl">Environment <small>Node.js runtime</small></div>
+                <div class="sr"><code id="setEnv">—</code></div>
+              </div>
+              <div class="settings-row">
+                <div class="sl">WhatsApp Session <small>Connection status</small></div>
+                <div class="sr"><code id="setSession">—</code></div>
+              </div>
+              <div class="settings-row" style="border:none">
+                <div class="sl">Developed by <small>Rameez Scripts</small></div>
+                <div class="sr">
+                  <a href="https://wa.me/923224083545" target="_blank" style="color:var(--blue);text-decoration:none;font-size:12px"><i class="fa-brands fa-whatsapp"></i> Contact</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ============ PAGE: templates ============ -->
       <div class="page" id="page-templates">
         <div class="card">
@@ -1163,6 +1487,95 @@
                 <tbody id="ctBody"><tr><td colspan="5" class="ct-empty"><i class="fa-solid fa-address-book"></i>No contacts imported yet.</td></tr></tbody>
               </table>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PAGE: team ============ -->
+      <div class="page" id="page-team">
+        <div class="card">
+          <div class="card-head"><i class="fa-solid fa-users"></i> Team <span class="right" id="teamName">—</span></div>
+          <div class="card-body">
+            <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:8px;font-size:14px">
+                <i class="fa-solid fa-users" style="color:var(--blue);font-size:24px"></i>
+                <span><strong id="teamNameDisplay">—</strong> &middot; <span id="teamMemberCount">0</span> members</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card hidden" id="teamInviteCard">
+          <div class="card-head"><i class="fa-solid fa-user-plus"></i> Invite Member</div>
+          <div class="card-body">
+            <div class="invite-form">
+              <div class="field" style="margin:0;flex:1;min-width:180px">
+                <input type="email" id="inviteEmail" placeholder="colleague@example.com">
+              </div>
+              <div class="field" style="margin:0">
+                <select id="inviteRole">
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <button class="btn" id="inviteBtn"><i class="fa-solid fa-paper-plane"></i> Invite</button>
+            </div>
+            <div id="inviteResult"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><i class="fa-solid fa-address-book"></i> Members</div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="team-table">
+                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+                <tbody id="teamMembersBody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Loading members…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><i class="fa-solid fa-clock-rotate-left"></i> Audit Log <span class="right">last 50 actions</span></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="audit-table">
+                <thead><tr><th>Action</th><th>Performed By</th><th>Details</th><th>Time</th></tr></thead>
+                <tbody id="auditBody"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">Loading audit log…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PAGE: billing ============ -->
+      <div class="page" id="page-billing">
+        <div class="billing-grid" id="billingPlans">
+          <!-- plan cards rendered by JS -->
+        </div>
+
+        <div class="card" id="billingSubscriptionCard">
+          <div class="card-head"><i class="fa-solid fa-receipt"></i> Subscription</div>
+          <div class="card-body">
+            <div class="billing-info" id="billingInfo">
+              <!-- rendered by JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="billingUsageCard">
+          <div class="card-head"><i class="fa-solid fa-gauge"></i> Usage <span class="right">current month</span></div>
+          <div class="card-body" id="billingUsageBody">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><i class="fa-solid fa-bolt"></i> Quick Actions</div>
+          <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn" id="billingPortalBtn"><i class="fa-solid fa-external-link"></i> Manage Billing</button>
+            <button class="btn" id="billingPlansBtn" style="background:var(--line);color:var(--ink)"><i class="fa-solid fa-tags"></i> View Plans &amp; Pricing</button>
           </div>
         </div>
       </div>
@@ -1245,6 +1658,51 @@
 
 <div id="toastContainer"></div>
 
+<!-- ===== onboarding overlay ===== -->
+<div class="onboard-overlay" id="onboardOverlay">
+  <div class="onboard-box">
+    <div class="onboard-header">
+      <div class="ob-icon"><i class="fa-solid fa-whatsapp"></i></div>
+      <h2>Welcome to WhatsApp API Dashboard</h2>
+      <p>Send messages programmatically with built-in anti-ban protection. Here's how to start:</p>
+    </div>
+    <div class="onboard-steps">
+      <div class="onboard-step">
+        <div class="ob-num done" id="obStep1">1</div>
+        <div class="ob-content">
+          <strong>Connect WhatsApp</strong>
+          <span>Scan the QR code from the dashboard using WhatsApp on your phone (Settings → Linked devices → Link a device).</span>
+        </div>
+      </div>
+      <div class="onboard-step">
+        <div class="ob-num" id="obStep2">2</div>
+        <div class="ob-content">
+          <strong>Generate API Keys</strong>
+          <span>Create unique API keys for each of your apps. Manage them from the API Keys page — generate, scope, and revoke as needed.</span>
+        </div>
+      </div>
+      <div class="onboard-step">
+        <div class="ob-num" id="obStep3">3</div>
+        <div class="ob-content">
+          <strong>Send Your First Message</strong>
+          <span>Use the test send form on the dashboard, or call the API from any language. Messages queue and send one-by-one with anti-ban delays.</span>
+        </div>
+      </div>
+      <div class="onboard-step">
+        <div class="ob-num" id="obStep4">4</div>
+        <div class="ob-content">
+          <strong>Scale Up</strong>
+          <span>Launch bulk campaigns with CSV imports, use message templates, and track delivery through the campaign reports.</span>
+        </div>
+      </div>
+    </div>
+    <div class="onboard-footer">
+      <button class="btn" id="onboardDismiss" style="background:var(--line);color:var(--ink)"><i class="fa-solid fa-xmark"></i> Dismiss</button>
+      <button class="btn" id="onboardConnectBtn"><i class="fa-solid fa-qrcode"></i> Connect WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== modal overlay (QR, confirmations) ===== -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box" id="modalBox">
@@ -1292,7 +1750,10 @@
     templates: { icon: 'fa-file-lines',        title: 'Templates' },
     contacts:  { icon: 'fa-address-book',     title: 'Contacts' },
     docs:      { icon: 'fa-book',             title: 'API Docs' },
-    keys:      { icon: 'fa-key',              title: 'API Keys' }
+    keys:      { icon: 'fa-key',              title: 'API Keys' },
+    settings:  { icon: 'fa-gear',             title: 'Settings' },
+    team:      { icon: 'fa-users',            title: 'Team' },
+    billing:   { icon: 'fa-credit-card',      title: 'Billing' }
   };
 
   let showPage = name => {
@@ -1356,6 +1817,7 @@
       $('kpiKeyName').textContent = me.name || 'key';
       tick();
       renderKeys();
+      setTimeout(showOnboarding, 500);
     } catch {
       $('gateAlertText').textContent = 'Could not reach the server.';
       $('gateAlert').classList.add('show');
@@ -1405,6 +1867,7 @@
       $('queueInfo').classList.toggle('hidden', !pending);
       $('queueInfo').innerHTML = pending ? '<i class="fa-solid fa-hourglass-half"></i> ' + pending + ' message(s) in queue — sending one every ' + gapText(status) + ' (anti-ban)' : '';
       show($('apiSection'));
+      updateOnboardingSteps(status);
       return;
     }
 
@@ -2295,11 +2758,106 @@
     toast('All contacts cleared.', 'info');
   };
 
-  // ========== PHASE 3: ANALYTICS CHART ==========
+  // ========== SETTINGS PAGE ==========
+  const renderSettings = status => {
+    if (!me) return;
+    $('setKeyName').textContent = me.name || '—';
+    $('setKeyRole').textContent = me.role || '—';
+    $('setKeyRole').className = 'settings-badge ' + (me.role || '');
+    $('setKeyPrefix').textContent = me.prefix || '—';
+    $('setKeyId').textContent = me.id || '—';
+    $('setEnv').textContent = 'Node.js on ' + navigator.platform;
+
+    if (status) {
+      $('setSession').textContent = status.connected ? 'Connected' : (status.status || '—');
+      $('setSession').style.color = status.connected ? 'var(--green)' : 'var(--red)';
+      $('setAbGap').textContent = status.queueGapMs
+        ? Math.round(status.queueGapMs.min / 1000) + '–' + Math.round(status.queueGapMs.max / 1000) + 's'
+        : '5–9s';
+      $('setAbTyping').textContent = status.typingSimulation ? 'enabled' : 'disabled';
+      $('setAbBurst').textContent = status.burstSize || '20';
+      $('setAbDaily').textContent = status.dailyLimit ? status.dailyLimit + '/day' : 'unlimited';
+    }
+
+    // Theme toggle state
+    const isDark = document.body.classList.contains('dark');
+    $('themeLightBtn').classList.toggle('active', !isDark);
+    $('themeDarkBtn').classList.toggle('active', isDark);
+  };
+
+  // Theme toggle from settings
+  $('themeToggle').addEventListener('click', e => {
+    const b = e.target.closest('button[data-theme]');
+    if (!b) return;
+    const isDark = b.dataset.theme === 'dark';
+    document.body.classList.toggle('dark', isDark);
+    $('darkIcon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    localStorage.setItem('wapi_dark', isDark ? '1' : '0');
+    $('themeLightBtn').classList.toggle('active', !isDark);
+    $('themeDarkBtn').classList.toggle('active', isDark);
+    setTimeout(() => { if (typeof drawChart === 'function') {
+      try { const cvs = $('sendChart'); if (cvs && cvs.style.display !== 'none') {
+        api('/api/messages?limit=200').then(({ res, json }) => {
+          if (res.ok && json.success) drawChart(json.data.messages || []);
+        }).catch(() => {});
+      }} catch {} }
+    }, 100);
+  });
+
+  $('setToggleSidebar').onclick = () => {
+    document.body.classList.toggle('sb-mini');
+    localStorage.setItem('wapi_sb_mini', document.body.classList.contains('sb-mini') ? '1' : '0');
+  };
+
+  // ========== ONBOARDING ==========
+  const showOnboarding = () => {
+    const dismissed = localStorage.getItem('wapi_onboard_dismissed');
+    if (dismissed) return;
+    $('onboardOverlay').classList.add('show');
+  };
+
+  $('onboardDismiss').onclick = () => {
+    $('onboardOverlay').classList.remove('show');
+    localStorage.setItem('wapi_onboard_dismissed', '1');
+  };
+  $('onboardOverlay').addEventListener('click', e => {
+    if (e.target === $('onboardOverlay')) {
+      $('onboardOverlay').classList.remove('show');
+      localStorage.setItem('wapi_onboard_dismissed', '1');
+    }
+  });
+  $('onboardConnectBtn').onclick = () => {
+    $('onboardOverlay').classList.remove('show');
+    localStorage.setItem('wapi_onboard_dismissed', '1');
+    showPage('dashboard');
+  };
+
+  // Track onboarding steps based on status
+  const updateOnboardingSteps = status => {
+    if (status.connected) {
+      $('obStep1').classList.add('done');
+      if (status.sentToday > 0) {
+        $('obStep3').classList.add('done');
+      }
+    }
+  };
+
+  // ========== ANALYTICS CHART ==========
   const drawChart = (messages = []) => {
     const canvas = $('sendChart');
     const empty = $('chartEmpty');
     if (!canvas || !canvas.getContext) return;
+
+    // Update mini stats
+    const total = messages.length;
+    const sent = messages.filter(m => m.status === 'sent' || m.status === 'delivered' || m.status === 'read').length;
+    const failed = messages.filter(m => m.status === 'failed').length;
+    const rate = total > 0 ? Math.round((sent / total) * 100) + '%' : '—';
+    const numDays = 7;
+    const avg = total > 0 ? Math.round(total / numDays) : '—';
+    $('statTotal').textContent = total || '—';
+    $('statRate').textContent = rate;
+    $('statDaily').textContent = avg;
 
     const now = new Date();
     const dayMap = {};
@@ -2418,6 +2976,333 @@
     _origShowPage(name);
     if (name === 'templates') renderTemplates();
     if (name === 'contacts') renderContacts($('ctSearch').value);
+    if (name === 'settings') renderSettings();
+    if (name === 'team') loadTeam();
+    if (name === 'billing') loadBilling();
+  };
+
+  // Also update settings when status polls
+  const _origRender2 = render;
+  render = async status => {
+    await _origRender2(status);
+    const visiblePage = document.querySelector('.page.active');
+    if (visiblePage && visiblePage.id === 'page-settings') renderSettings(status);
+  };
+
+  // ========== AUTH TABS ==========
+  document.querySelectorAll('.gate-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.gate-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.gate-pane').forEach(p => p.classList.add('hidden'));
+      const pane = document.querySelector(`.gate-pane[data-auth="${tab.dataset.auth}"]`);
+      if (pane) pane.classList.remove('hidden');
+      ['gateAlert','loginAlert','registerAlert'].forEach(id => { const el = $(id); if (el) el.classList.remove('show'); });
+    });
+  });
+
+  const showAlert = (el, textEl, msg) => { textEl.textContent = msg; el.classList.add('show'); };
+
+  // ---- Register ----
+  $('registerBtn').onclick = async () => {
+    const name = $('registerName').value.trim();
+    const email = $('registerEmail').value.trim();
+    const password = $('registerPassword').value;
+    const team = $('registerTeam').value.trim();
+    const alertEl = $('registerAlert');
+    const alertText = $('registerAlertText');
+    if (!name) { showAlert(alertEl, alertText, 'Enter your name.'); return; }
+    if (!email) { showAlert(alertEl, alertText, 'Enter your email.'); return; }
+    if (password.length < 8) { showAlert(alertEl, alertText, 'Password must be at least 8 characters.'); return; }
+    const btn = $('registerBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i> Creating…';
+    try {
+      const body = { name, email, password };
+      if (team) body.teamName = team;
+      const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      const json = await res.json();
+      if (!res.ok || !json.success) { showAlert(alertEl, alertText, json.error || 'Registration failed.'); return; }
+      const apiKey = json.data.apiKey;
+      if (apiKey) await unlock(apiKey);
+      else showAlert(alertEl, alertText, 'No API key returned.');
+    } catch { showAlert(alertEl, alertText, 'Could not reach the server.'); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create Account & Unlock'; }
+  };
+
+  // ---- Login ----
+  $('loginBtn').onclick = async () => {
+    const email = $('loginEmail').value.trim();
+    const password = $('loginPassword').value;
+    const alertEl = $('loginAlert');
+    const alertText = $('loginAlertText');
+    if (!email) { showAlert(alertEl, alertText, 'Enter your email.'); return; }
+    if (!password) { showAlert(alertEl, alertText, 'Enter your password.'); return; }
+    const btn = $('loginBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i> Signing In…';
+    try {
+      const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) });
+      const json = await res.json();
+      if (!res.ok || !json.success) { showAlert(alertEl, alertText, json.error || 'Login failed.'); return; }
+      const teams = json.data.teams || [];
+      if (!teams.length) { showAlert(alertEl, alertText, 'No teams found for this account.'); return; }
+      $('loginTeams').classList.remove('hidden');
+      $('loginTeamList').innerHTML = teams.map(t =>
+        '<button class="btn block" style="margin-bottom:8px;font-size:13px;text-align:left;justify-content:flex-start" data-team-key="' + t.apiKey + '">' +
+          '<i class="fa-solid fa-users"></i> ' + esc(t.name || 'Team') + ' — <code style="font-size:11px;background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px">' + (t.apiKey || '').slice(0, 18) + '…</code>' +
+        '</button>'
+      ).join('');
+      alertEl.classList.remove('show');
+    } catch { showAlert(alertEl, alertText, 'Could not reach the server.'); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In'; }
+  };
+
+  $('loginTeamList').addEventListener('click', async e => {
+    const b = e.target.closest('[data-team-key]');
+    if (!b) return;
+    await unlock(b.dataset.teamKey);
+  });
+
+  // ========== TEAM PAGE ==========
+  let teamData = null;
+
+  const loadTeam = async () => {
+    try {
+      const { res, json } = await api('/api/team');
+      if (!res.ok || !json.success) return;
+      teamData = json.data;
+      $('teamName').textContent = teamData.name || '—';
+      $('teamNameDisplay').textContent = teamData.name || '—';
+      $('teamMemberCount').textContent = teamData.memberCount || 0;
+      const role = teamData.myRole || '';
+      $('teamInviteCard').classList.toggle('hidden', !(role === 'owner' || role === 'admin'));
+      loadMembers();
+      loadAudit();
+    } catch { /* AUTH handled in api() */ }
+  };
+
+  const loadMembers = async () => {
+    try {
+      const { res, json } = await api('/api/team/members');
+      if (!res.ok || !json.success) return;
+      const members = json.data.members || [];
+      const role = teamData?.myRole || '';
+      const canManage = role === 'owner' || role === 'admin';
+      $('teamMembersBody').innerHTML = members.length ? members.map(m =>
+        '<tr>' +
+          '<td>' + esc(m.name || '—') + '</td>' +
+          '<td>' + esc(m.email) + '</td>' +
+          '<td><span class="team-role-badge ' + (m.role || 'member') + '">' + esc(m.role || 'member') + '</span></td>' +
+          '<td style="font-size:11.5px;color:var(--muted)">' + (m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : '—') + '</td>' +
+          '<td>' + (canManage && m.role !== 'owner' ?
+            '<button class="team-btn promote" data-promote="' + m.id + '" title="Promote to admin"><i class="fa-solid fa-arrow-up"></i></button> ' +
+            '<button class="team-btn danger" data-remove="' + m.id + '" title="Remove from team"><i class="fa-solid fa-user-minus"></i></button>' : '') + '</td>' +
+        '</tr>'
+      ).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">No members found.</td></tr>';
+    } catch { /* AUTH handled in api() */ }
+  };
+
+  const loadAudit = async () => {
+    try {
+      const { res, json } = await api('/api/team/audit?limit=50');
+      if (!res.ok || !json.success) return;
+      const entries = json.data.entries || [];
+      $('auditBody').innerHTML = entries.length ? entries.map(e =>
+        '<tr>' +
+          '<td class="audit-action">' + esc(e.action) + '</td>' +
+          '<td>' + esc(e.performedBy || '—') + '</td>' +
+          '<td class="audit-detail">' + esc(e.details || '') + '</td>' +
+          '<td class="audit-time">' + (e.createdAt ? new Date(e.createdAt).toLocaleString() : '—') + '</td>' +
+        '</tr>'
+      ).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">No audit entries yet.</td></tr>';
+    } catch { /* AUTH handled in api() */ }
+  };
+
+  // ---- Invite ----
+  $('inviteBtn').onclick = async () => {
+    const email = $('inviteEmail').value.trim();
+    const role = $('inviteRole').value;
+    if (!email) { toast('Enter an email address.', 'warning'); return; }
+    const btn = $('inviteBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i> Sending…';
+    try {
+      const { res, json } = await api('/api/team/invite', { method: 'POST', body: JSON.stringify({ email, role }) });
+      if (!res.ok || !json.success) {
+        $('inviteResult').innerHTML = '<div class="alert error show" style="margin-top:10px"><i class="fa-solid fa-circle-exclamation"></i><span>' + esc(json.error || 'Invite failed.') + '</span></div>';
+        return;
+      }
+      $('inviteEmail').value = '';
+      toast('Invitation sent to ' + email + '.', 'success');
+      $('inviteResult').innerHTML = '';
+    } catch { /* AUTH */ }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Invite'; }
+  };
+
+  // ---- Role management (delegated) ----
+  document.addEventListener('click', async e => {
+    const promoteBtn = e.target.closest('[data-promote]');
+    if (promoteBtn) {
+      if (!confirm('Promote this user to admin?')) return;
+      try {
+        const { res, json } = await api('/api/team/promote', { method: 'POST', body: JSON.stringify({ userId: promoteBtn.dataset.promote }) });
+        if (res.ok) { toast('User promoted.', 'success'); loadMembers(); }
+        else toast(json.error || 'Promotion failed.', 'error');
+      } catch { /* AUTH */ }
+      return;
+    }
+    const removeBtn = e.target.closest('[data-remove]');
+    if (removeBtn) {
+      if (!confirm('Remove this user from the team?')) return;
+      try {
+        const { res, json } = await api('/api/team/remove', { method: 'POST', body: JSON.stringify({ userId: removeBtn.dataset.remove }) });
+        if (res.ok) { toast('User removed.', 'success'); loadMembers(); loadTeam(); }
+        else toast(json.error || 'Removal failed.', 'error');
+      } catch { /* AUTH */ }
+    }
+  });
+
+  // ========== BILLING PAGE ==========
+  let billingPlanId = null;
+
+  const PLANS_FALLBACK = [
+    { id: 'free', name: 'Free', price: 0, period: 'mo', features: ['Up to 50 messages/day', '1 API key', 'Basic support'] },
+    { id: 'starter', name: 'Starter', price: 9.99, period: 'mo', features: ['Up to 500 messages/day', '5 API keys', 'Email support', 'Basic analytics'] },
+    { id: 'pro', name: 'Pro', price: 29.99, period: 'mo', features: ['Up to 2000 messages/day', 'Unlimited API keys', 'Priority support', 'Advanced analytics', 'Team members'] },
+    { id: 'enterprise', name: 'Enterprise', price: 99.99, period: 'mo', features: ['Unlimited messages', 'Unlimited API keys', '24/7 support', 'Custom integrations', 'SLA guarantee', 'Dedicated server'] }
+  ];
+
+  const renderPlanCards = (plans, sub) => {
+    const list = plans.length ? plans : PLANS_FALLBACK;
+    const currentPlan = sub.plan || 'free';
+    const status = sub.status || 'active';
+    const isCanceled = status === 'canceled';
+
+    $('billingPlans').innerHTML = list.map(p => {
+      const isCurrent = p.id === currentPlan;
+      let actionHtml = '';
+      if (isCurrent && !isCanceled) {
+        actionHtml = '<span class="plan-badge"><i class="fa-solid fa-check"></i> Current Plan</span>';
+      } else {
+        const dir = isCurrent && isCanceled ? 'up' : (p.price > 0 ? 'up' : 'down');
+        const label = (isCurrent && isCanceled) || (p.price > 0) ? 'Upgrade' : 'Downgrade';
+        actionHtml = '<div class="plan-action"><button class="btn" data-plan="' + p.id + '" style="' + (dir === 'down' ? 'background:var(--line);color:var(--ink)' : '') + '"><i class="fa-solid fa-arrow-' + dir + '"></i> ' + label + '</button></div>';
+      }
+      const priceStr = p.price === 0 ? 'Free' : '$' + p.price.toFixed(2) + '<small>/' + p.period + '</small>';
+      return '<div class="plan-card' + (isCurrent ? ' featured' : '') + '">' +
+        '<div class="plan-name">' + esc(p.name) + '</div>' +
+        '<div class="plan-price">' + priceStr + '</div>' +
+        '<ul class="plan-features">' + (p.features || []).map(f => '<li><i class="fa-solid fa-check"></i>' + esc(f) + '</li>').join('') + '</ul>' +
+        actionHtml +
+        '</div>';
+    }).join('');
+
+    $('billingPlans').onclick = e => {
+      const btn = e.target.closest('[data-plan]');
+      if (!btn) return;
+      handlePlanChange(btn.dataset.plan);
+    };
+  };
+
+  const renderUsageMeter = sub => {
+    const used = sub.usage || 0;
+    const quota = sub.quota || 100;
+    const pct = quota > 0 ? Math.min(100, Math.round((used / quota) * 100)) : 0;
+    const color = pct > 90 ? 'red' : pct > 70 ? 'amber' : 'green';
+    $('billingUsageBody').innerHTML =
+      '<div class="usage-meter">' +
+      '<div class="meter-label"><span>' + esc(used.toLocaleString()) + ' of ' + esc(quota.toLocaleString()) + ' messages sent</span><span>' + pct + '%</span></div>' +
+      '<div class="track"><div class="bar ' + color + '" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+  };
+
+  const renderSubscriptionInfo = sub => {
+    if (!sub.plan) {
+      $('billingInfo').innerHTML = '<div style="color:var(--muted);text-align:center;padding:10px">No active subscription.</div>';
+      return;
+    }
+    const planName = sub.planName || sub.plan || 'Free';
+    const status = sub.status || 'active';
+    const statusLabels = { active: 'Active', canceled: 'Canceled', past_due: 'Past Due', trialing: 'Trialing' };
+    const currentPeriodStart = sub.currentPeriodStart ? new Date(sub.currentPeriodStart).toLocaleDateString() : '—';
+    const currentPeriodEnd = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toLocaleDateString() : '—';
+    const trialEnd = sub.trialEnd ? new Date(sub.trialEnd).toLocaleDateString() : null;
+    let extras = '';
+    if (planName !== 'Free' && status !== 'canceled') {
+      extras = '<div class="bi-item" style="grid-column:1/-1;text-align:center;padding-top:4px"><button class="btn danger" id="billingCancelBtn"><i class="fa-solid fa-ban"></i> Cancel Subscription</button></div>';
+    }
+    $('billingInfo').innerHTML =
+      '<div class="bi-item"><div class="bi-label">Plan</div><div class="bi-value" style="display:flex;align-items:center;gap:8px">' + esc(planName) + ' <span class="subscription-status ' + status + '">' + (statusLabels[status] || status) + '</span></div></div>' +
+      '<div class="bi-item"><div class="bi-label">Period</div><div class="bi-value">' + currentPeriodStart + ' — ' + currentPeriodEnd + '</div></div>' +
+      (trialEnd ? '<div class="bi-item"><div class="bi-label">Trial ends</div><div class="bi-value">' + trialEnd + '</div></div>' : '') +
+      extras;
+  };
+
+  const loadBilling = async () => {
+    try {
+      const [subRes, plansRes] = await Promise.all([
+        api('/api/billing/subscription'),
+        api('/api/billing/plans')
+      ]);
+      const sub = subRes.json.data || {};
+      const plans = plansRes.json.data?.plans || [];
+      billingPlanId = sub.planId || null;
+      renderPlanCards(plans, sub);
+      renderUsageMeter(sub);
+      renderSubscriptionInfo(sub);
+    } catch (e) {
+      if (e.message !== 'AUTH') {
+        $('billingPlans').innerHTML = '<div class="alert error show" style="grid-column:1/-1"><i class="fa-solid fa-circle-exclamation"></i><span>Failed to load billing data.</span></div>';
+        toast('Could not load billing information.', 'error');
+      }
+    }
+  };
+
+  const handlePlanChange = async planId => {
+    if (!planId) return;
+    try {
+      const { res, json } = await api('/api/billing/change-plan', { method: 'POST', body: JSON.stringify({ planId }) });
+      if (res.ok && json.success) {
+        toast('Plan changed to ' + planId + '.', 'success');
+        loadBilling();
+      } else {
+        toast(json.error || 'Failed to change plan.', 'error');
+      }
+    } catch (e) { if (e.message !== 'AUTH') toast('Could not change plan.', 'error'); }
+  };
+
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('#billingCancelBtn');
+    if (!btn) return;
+    e.preventDefault();
+    if (!confirm('Cancel your subscription? You will lose access to paid features at the end of the billing period.')) return;
+    try {
+      const { res, json } = await api('/api/billing/cancel', { method: 'POST' });
+      if (res.ok && json.success) {
+        toast('Subscription canceled.', 'success');
+        loadBilling();
+      } else {
+        toast(json.error || 'Failed to cancel.', 'error');
+      }
+    } catch (e) { if (e.message !== 'AUTH') toast('Could not cancel subscription.', 'error'); }
+  });
+
+  $('billingPortalBtn').onclick = async e => {
+    e.preventDefault();
+    try {
+      const { res, json } = await api('/api/billing/portal', { method: 'POST' });
+      if (res.ok && json.data?.url) {
+        window.open(json.data.url, '_blank');
+      } else {
+        toast(json.error || 'Could not open billing portal.', 'error');
+      }
+    } catch (e) { if (e.message !== 'AUTH') toast('Could not open portal.', 'error'); }
+  };
+
+  $('billingPlansBtn').onclick = e => {
+    e.preventDefault();
+    $('billingPlans').scrollIntoView({ behavior: 'smooth' });
   };
 
   // ---- boot ----
