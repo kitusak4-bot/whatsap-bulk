@@ -5,6 +5,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import cors from 'cors'
@@ -141,6 +142,37 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp }) => {
   })))
   app.use('/api/admin', createAdminRouter(apiKeys))
   app.use('/api', createWhatsAppRouter(whatsapp))
+  app.get('/api/campaigns/recent', asyncHandler(async (req, res) => {
+    const campaignDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'campaigns')
+    let files = []
+    try {
+      files = readdirSync(campaignDir)
+        .filter(f => f.startsWith('campaign-') && f.endsWith('.json'))
+        .map(f => ({ name: f, mtime: statSync(path.join(campaignDir, f)).mtimeMs }))
+        .sort((a, b) => b.mtime - a.mtime)
+        .slice(0, 20)
+    } catch {
+      // campaigns dir may not exist
+    }
+    const reports = files.map(f => {
+      try {
+        const raw = readFileSync(path.join(campaignDir, f.name), 'utf-8')
+        const data = JSON.parse(raw)
+        return {
+          file: f.name,
+          campaign: data.campaign || null,
+          time: data.time || null,
+          total: data.total ?? null,
+          success: data.success ?? null,
+          failed: data.failed ?? null,
+          resultsCount: Array.isArray(data.results) ? data.results.length : null
+        }
+      } catch {
+        return { file: f.name, campaign: null, time: null, total: null, success: null, failed: null, resultsCount: null }
+      }
+    })
+    ok(res, { totalCampaigns: files.length, reports })
+  }))
   app.use('/api', createMessagingRouter(whatsapp, cfg))
   app.use(notFound)
   app.use(errorHandler(logs))

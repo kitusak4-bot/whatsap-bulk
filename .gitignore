@@ -1,5 +1,6 @@
 node_modules/
 .env
+.env.*
 data/
 logs/
 coverage/
@@ -8,3 +9,7 @@ coverage/
 *.sqlite-shm
 *.sqlite-wal
 .DS_Store
+backup-baileys.tar.gz
+campaigns/campaign-*.json
+campaigns/campaign.json
+campaigns/contacts.csv
