@@ -1,117 +1,153 @@
-# Baileys WhatsApp Send API
+# whatsap-bulk
 
-Developed by Mohammad Rameez Imdad (Rameez Scripts)
-WhatsApp: https://wa.me/923224083545 (For Custom Projects)
-YouTube: https://www.youtube.com/@rameezimdad (Subscribe for more!)
+Production WhatsApp REST API with anti-ban protection, campaign dashboard, and real-time analytics.
 
-Send WhatsApp messages from any app with a simple HTTP call. Scan a QR once — done.
-**Send-only and fire-and-forget** — incoming messages are ignored and delivery/seen receipts
-are not tracked. Built-in **anti-ban protection** (all automatic): one message at a time with a
-**random 5–9s gap**, **"typing…" simulation** before each send, a **30–60s cool-down every 20
-messages**, a **daily send limit** (default 500/day), and recipients are **verified on WhatsApp**
-before sending. Tune everything in `.env` (`MESSAGE_DELAY_MIN/MAX_MS`, `TYPING_SIMULATION`,
-`BURST_SIZE`, `DAILY_SEND_LIMIT`…). **CORS is open to any origin** by default (`CORS_ORIGINS=*`) —
-call it from any website, app, localhost or `file://` page.
+[![CI](https://github.com/kitusak4-bot/whatsap-bulk/actions/workflows/ci.yml/badge.svg)](https://github.com/kitusak4-bot/whatsap-bulk/actions/workflows/ci.yml)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org)
+[![License](https://img.shields.io/badge/license-MIT-blue)](#license)
 
-**Use it from Google Apps Script / Sheets:** see [`clients/apps-script`](./clients/apps-script).
+Send WhatsApp messages from any application with a single HTTP call. Scan a QR code once and start sending.
 
----
+## Key Features
 
-## ⚡ Install — 3 steps
+- **REST API** — send text, images, documents, audio, locations via HTTP
+- **Anti-ban protection** — random 5-9s delays, typing simulation, burst pauses, daily limits
+- **Campaign engine** — bulk send from CSV with progress tracking
+- **Dashboard** — real-time status, message queue, analytics, contact management
+- **API key auth** — admin and per-app keys with role-based access
+- **Fire-and-forget** — messages queue automatically, no rate-limit worries
 
-> Needs: a VPS with **Ubuntu 24.04** (or 22.04), logged in as `root`.
-> Repo note: make this repo **Public** on GitHub before installing, set back to **Private** after.
+## Quick Start
 
-**1.** Open the VPS terminal (Hostinger hPanel → your VPS → **Browser terminal**)
-
-**2.** Paste this and press Enter:
+### Docker (recommended)
 
 ```bash
-curl -fsSLo i.sh https://raw.githubusercontent.com/rameezimdad/baileys-api/master/deploy/vps-install.sh && bash i.sh
+git clone https://github.com/kitusak4-bot/whatsap-bulk.git
+cd whatsap-bulk
+
+# Generate secrets
+echo "ADMIN_API_KEY=$(openssl rand -base64 48)" >> .env
+echo "API_KEY_PEPPER=$(openssl rand -base64 48)" >> .env
+
+docker compose up -d
 ```
 
-**3.** Wait 3–5 min. It prints your **ADMIN API KEY** — copy and save it (shown only once).
-Open `http://YOUR_VPS_IP/` → paste the key → scan the QR with WhatsApp (**Settings → Linked devices → Link a device**).
+Open `http://localhost:3000` → scan the QR code → start sending.
 
-✅ That's it. The dashboard now shows a test-send form, an **API Keys** panel, and ready-made code examples.
-
-**Reinstall from zero** (new key + new QR): same command but `bash i.sh --fresh`
-
-## 🔄 Update an existing install (one command)
-
-Already installed? Get the latest code **without losing anything** — same `.env`, same API
-keys, same WhatsApp session (no QR re-scan), message history intact:
+### Manual install
 
 ```bash
-curl -fsSLo u.sh https://raw.githubusercontent.com/rameezimdad/baileys-api/master/deploy/vps-update.sh && bash u.sh
+git clone https://github.com/kitusak4-bot/whatsap-bulk.git
+cd whatsap-bulk
+npm install
+cp .env.example .env
+# Edit .env — set ADMIN_API_KEY and API_KEY_PEPPER (min 32 chars each)
+node src/server.js
 ```
 
-> Repo note: same as install — make the repo **Public** while running this, set back to
-> **Private** after (or pass a GitHub token: `bash u.sh YOUR_TOKEN`).
+## API Overview
 
-Run it on every client VPS whenever you ship a new version — takes ~1 minute.
+All endpoints require the `X-API-Key` header.
 
-## 🗑️ Delete old install (manual cleanup)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/send-message` | Send a text message |
+| POST | `/api/send-image` | Send an image (URL or upload) |
+| POST | `/api/send-document` | Send a PDF, Office doc, zip |
+| POST | `/api/send-audio` | Send audio / voice note |
+| POST | `/api/send-location` | Send a location pin |
+| GET | `/api/status` | Connection + queue status |
+| GET | `/api/messages` | Message queue + history |
+| GET | `/api/me` | Your API key info |
+| GET | `/api/qr` | QR code for WhatsApp linking |
+| GET | `/api/server-info` | Server domain / IP info |
+| POST | `/api/logout` | Unlink WhatsApp session (admin) |
+| POST | `/api/admin/generate-key` | Create a new API key (admin) |
+| POST | `/api/admin/revoke-key` | Revoke an API key (admin) |
+| GET | `/api/admin/list-keys` | List all keys (admin) |
 
-Run these one by one if you want to remove everything yourself:
-
-```bash
-pm2 delete baileys-api
-```
-```bash
-rm -rf /opt/baileys-api ~/baileys-api ~/i.sh
-```
-```bash
-rm -f /etc/nginx/sites-enabled/baileys-api /etc/nginx/sites-available/baileys-api
-```
-```bash
-systemctl reload nginx
-```
-
-(`bash i.sh --fresh` does the same cleanup automatically before installing.)
-
----
-
-## 📤 Send a message
+### Example: send a message
 
 ```bash
-curl -X POST http://YOUR_VPS_IP/api/send-message \
+curl -X POST http://localhost:3000/api/send-message \
   -H "X-API-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"to":"923001234567","message":"Hello"}'
+  -d '{"to":"923001234567","message":"Hello from API"}'
 ```
 
-- Number = country code + number, **no `+`**
-- Also: `/api/send-image`, `/api/send-document`, `/api/send-audio` (multipart field `file`), `/api/send-location`
-- Bulk? Fire away — extra messages reply `"status":"queued"` instantly and send automatically, safely spaced
-- Make one key per app from the dashboard's **API Keys** panel
+Response:
+```json
+{
+  "success": true,
+  "data": { "status": "sent", "id": "msg_abc123" }
+}
+```
 
-## 🌐 Domain + HTTPS (optional)
+## Architecture
 
-1. Cloudflare → add domain → DNS: `A @ → VPS_IP` and `A www → VPS_IP`, both **Proxied 🟠**
-2. Set Cloudflare's nameservers at your registrar
-3. ⚠️ Cloudflare → **SSL/TLS → Overview → "Flexible"** (otherwise error 522)
-4. On the VPS:
+```
+┌─────────────────────────────────────────────┐
+│  Port 3000 — Main API + Dashboard           │
+│  ├── Express + Baileys (WhatsApp Web)       │
+│  ├── SQLite (messages, keys, logs)          │
+│  ├── Anti-ban queue (p-queue)               │
+│  └── Static dashboard (public/index.html)   │
+├─────────────────────────────────────────────┤
+│  Port 4000 — Campaign Dashboard (optional)  │
+│  ├── Bulk campaign launcher                 │
+│  ├── Campaign reports                       │
+│  └── Separate auth system                   │
+└─────────────────────────────────────────────┘
+```
+
+## Configuration
+
+All settings are in `.env`. Key options:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MESSAGE_DELAY_MIN_MS` | 5000 | Min gap between messages |
+| `MESSAGE_DELAY_MAX_MS` | 9000 | Max gap between messages |
+| `TYPING_SIMULATION` | true | Show "typing..." before sends |
+| `BURST_SIZE` | 20 | Messages before a long pause |
+| `DAILY_SEND_LIMIT` | 500 | Max messages per day (UTC) |
+| `CHECK_RECIPIENT_EXISTS` | true | Verify number is on WhatsApp |
+
+## Deployment
+
+### VPS (Ubuntu)
 
 ```bash
-sed -i 's|^PUBLIC_DOMAIN=.*|PUBLIC_DOMAIN=yourdomain.com|' /opt/baileys-api/.env && pm2 restart baileys-api --update-env
+curl -fsSLo i.sh https://raw.githubusercontent.com/kitusak4-bot/whatsap-bulk/master/deploy/vps-install.sh && bash i.sh
 ```
 
-## 🔄 Update to latest code
+### Update
 
 ```bash
-bash i.sh
+curl -fsSLo u.sh https://raw.githubusercontent.com/kitusak4-bot/whatsap-bulk/master/deploy/vps-update.sh && bash u.sh
 ```
 
-(Same installer — it keeps your `.env`, API keys, and WhatsApp session. Repo must be Public for the moment.)
+## Project Structure
 
-## 🛠️ Daily commands
+```
+├── src/                  # Main API server
+│   ├── server.js         # Entry point
+│   ├── app.js            # Express app setup
+│   ├── config.js         # Zod-validated env config
+│   ├── routes/           # API routes
+│   ├── services/         # Business logic
+│   ├── middleware/        # Auth, validation, error handling
+│   └── db/               # SQLite database
+├── public/               # Dashboard frontend
+│   └── index.html        # Single-file SPA
+├── dashboard/            # Campaign dashboard (port 4000)
+├── campaigns/            # Campaign worker + reports
+├── deploy/               # VPS install/update scripts
+├── test/                 # Test suite
+├── Dockerfile            # Container build
+└── docker-compose.yml    # Multi-service orchestration
+```
 
-| What | Command |
-|------|---------|
-| Status / logs | `pm2 status` · `pm2 logs baileys-api` |
-| Restart | `pm2 restart baileys-api` |
-| Forgot admin key | `grep ADMIN_API_KEY /opt/baileys-api/.env` |
-| Anti-ban gap | `MESSAGE_DELAY_MIN_MS` / `MESSAGE_DELAY_MAX_MS` in `/opt/baileys-api/.env` (then restart) — default 5000–9000 |
+## License
 
-Detailed manual install & troubleshooting: **[INSTALL.md](INSTALL.md)**
+MIT
