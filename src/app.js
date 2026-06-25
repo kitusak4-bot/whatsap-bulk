@@ -104,6 +104,9 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp }) => {
     index: 'index.html'
   }))
   app.get('/healthz', (req, res) => ok(res, { status: 'ok', whatsapp: whatsapp.getStatus().status }))
+  app.get('/api/openapi.json', (req, res) => {
+    res.sendFile(path.join(publicDir, '..', 'openapi.json'))
+  })
 
   app.use('/api', limiter({
     windowMs: cfg.apiRateLimitWindowMs,
