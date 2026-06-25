@@ -1,0 +1,44 @@
+services:
+  api:
+    build: .
+    container_name: whatsap-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      - HOST=0.0.0.0
+    volumes:
+      - wa-data:/app/data
+      - wa-auth:/app/auth
+      - wa-campaigns:/app/campaigns
+      - wa-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  dashboard:
+    build: .
+    container_name: whatsap-dashboard
+    restart: unless-stopped
+    command: ["node", "dashboard/server.js"]
+    ports:
+      - "4000:4000"
+    environment:
+      - DASHBOARD_PORT=4000
+      - DASHBOARD_USER=${DASHBOARD_USER:-admin}
+      - DASHBOARD_PASS=${DASHBOARD_PASS:-admin123}
+    volumes:
+      - wa-campaigns:/app/campaigns
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  wa-data:
+  wa-auth:
+  wa-campaigns:
+  wa-logs:
