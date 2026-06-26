@@ -8,7 +8,7 @@ import 'dotenv/config'
 import { createServer } from 'node:http'
 import { createApp } from './app.js'
 import { loadConfig } from './config.js'
-import { createDatabase, schema } from './db/database.js'
+import { createDatabase, schema, ensureSuperAdmin } from './db/database.js'
 import { createLogger } from './logger.js'
 import { ApiKeyService } from './services/api-key-service.js'
 import { SqliteAuthStore } from './services/auth-store.js'
@@ -32,6 +32,7 @@ import { RedisQueueService } from './services/redis-queue-service.js'
 import { RateLimiter } from './services/rate-limiter.js'
 import { ReportingService } from './services/reporting-service.js'
 import { BackupService } from './services/backup-service.js'
+import { SuperAdminService } from './services/super-admin-service.js'
 import { PostgresAdapter } from './db/postgres-adapter.js'
 
 const cfg = loadConfig()
@@ -54,6 +55,9 @@ const whatsapp = new WhatsAppService({ authStore, messages, logs, logger, cfg })
 const users = new UserService(db)
 const teams = new TeamService(db)
 const audit = new AuditService(db)
+
+// Create super admin on first launch
+ensureSuperAdmin(db, users, teams, apiKeys, logs)
 const billing = new BillingService({ db, cfg, logger })
 const webhooks = new WebhookService({ db, cfg, logger })
 const scheduler = new SchedulerService({ db, whatsapp, webhooks, logger })
@@ -73,7 +77,8 @@ if (cfg.databaseType === 'postgres' && cfg.pgConnectionString) {
 const rateLimiter = new RateLimiter(db)
 const reports = new ReportingService(db)
 const backup = new BackupService({ db, cfg, logger })
-const app = createApp({ cfg, logger, logs, apiKeys, whatsapp, users, teams, audit, billing, webhooks, scheduler, contacts, abTests, branding, queue, rateLimiter, reports, backup })
+const superAdmin = new SuperAdminService(db)
+const app = createApp({ cfg, logger, logs, apiKeys, whatsapp, users, teams, audit, billing, webhooks, scheduler, contacts, abTests, branding, queue, rateLimiter, reports, backup, superAdmin })
 const server = createServer(app)
 
 server.requestTimeout = 30000

@@ -3,8 +3,7 @@ import path from "path";
 import csv from "csv-parser";
 
 const API_URL = "http://127.0.0.1:3000/api/send-message";
-const API_KEY =
-  "wapi_9dda70dc0e01e27a_0ixPa6o2FHDT6jRBid_XoRxr20yN2YzffgcXVmX2usA";
+const API_KEY = "8y+ctt0MgC9IWLF3NiY2pJbKPCzKz/0wjf+cZe+PiQP9sKEb4cJtG7bDJpkvyA+u";
 
 // Load campaign config
 const campaign = JSON.parse(

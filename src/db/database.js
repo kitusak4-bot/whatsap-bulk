@@ -363,3 +363,59 @@ export const createDatabase = file => {
 
   return db
 }
+
+// Create super admin account on first launch (if no users exist)
+export const ensureSuperAdmin = (db, users, teams, apiKeys, logs) => {
+  const userCount = db.prepare('SELECT COUNT(*) AS n FROM users').get().n
+  
+  if (userCount === 0) {
+    console.log('[INIT] Creating super admin account...')
+    
+    const now = new Date().toISOString()
+    const superAdminId = 'super-admin-0000-0000-0000-000000000000'
+    const superTeamId = 'super-team-0000-0000-0000-000000000000'
+    
+    // Create super admin user
+    const salt = 'super-admin-salt'
+    const passwordHash = users.hash('password', salt) + ':' + salt
+    
+    db.prepare(`
+      INSERT OR IGNORE INTO users (id, email, name, password_hash, created_at, last_login_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(superAdminId, 'superadmin@platform.local', 'Super Administrator', passwordHash, now, null)
+    
+    // Create platform team
+    db.prepare(`
+      INSERT OR IGNORE INTO teams (id, name, owner_id, created_at)
+      VALUES (?, ?, ?, ?)
+    `).run(superTeamId, 'Platform Administration', superAdminId, now)
+    
+    // Add as team owner
+    db.prepare(`
+      INSERT OR IGNORE INTO team_members (team_id, user_id, role, invited_by, joined_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(superTeamId, superAdminId, 'owner', null, now)
+    
+    // Create super admin API key
+    const superApiKey = apiKeys.create({
+      name: 'Super Admin Platform Key',
+      role: 'admin'
+    })
+    
+    // Link API key to super admin user and team
+    db.prepare('UPDATE api_keys SET user_id = ?, team_id = ? WHERE id = ?').run(
+      superAdminId, superTeamId, superApiKey.id
+    )
+    
+    console.log('[INIT] ✅ Super admin account created')
+    console.log('[INIT] 📧 Email: superadmin@platform.local')
+    console.log('[INIT] 🔑 Password: password')
+    console.log('[INIT] 🔐 API Key: ' + superApiKey.apiKey)
+    
+    logs.write('info', 'system', 'super admin account created', {
+      userId: superAdminId,
+      teamId: superTeamId,
+      apiKeyId: superApiKey.id
+    })
+  }
+}

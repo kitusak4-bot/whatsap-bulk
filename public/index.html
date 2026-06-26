@@ -847,7 +847,7 @@
   }
   .tmpl-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.08); transform: translateY(-2px); }
   .tmpl-card .tmpl-name { font-size: 14px; font-weight: 700; color: var(--ink); display: block; margin-bottom: 6px; }
-  .tmpl-card .tmpl-prev { font-size: 12px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
+  .tmpl-card .tmpl-prev { font-size: 12px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
   .tmpl-card .tmpl-meta { font-size: 11px; color: var(--muted); margin-top: 8px; display: flex; gap: 10px; }
   .tmpl-card .tmpl-actions { margin-top: 10px; display: flex; gap: 6px; }
   .tmpl-card .tmpl-actions button { font-size: 11px; padding: 4px 10px; border-radius: 5px; border: none; cursor: pointer; transition: background .1s; }
@@ -938,6 +938,7 @@
     <li><button data-page="docs"><i class="fa-solid fa-book"></i><span>API Docs</span></button></li>
     <li><button data-page="keys"><i class="fa-solid fa-key"></i><span>API Keys</span></button></li>
     <li class="sec">System</li>
+    <li><button data-page="users"><i class="fa-solid fa-user-shield"></i><span>Users</span></button></li>
     <li><button data-page="billing"><i class="fa-solid fa-credit-card"></i><span>Billing</span></button></li>
     <li><button data-page="settings"><i class="fa-solid fa-gear"></i><span>Settings</span></button></li>
     <li><hr class="sb-divider"></li>
@@ -968,6 +969,22 @@
       <button class="qs-btn" id="qsBtn"><i class="fa-solid fa-paper-plane"></i> Send</button>
     </div>
     <button id="darkToggle" title="Toggle dark mode"><i class="fa-solid fa-moon" id="darkIcon"></i></button>
+    <div class="user-menu" id="userMenu" style="position:relative;display:none">
+      <button id="userMenuBtn" style="background:var(--card-bg);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;font-weight:600">
+        <i class="fa-solid fa-user-circle" style="font-size:16px;color:var(--blue)"></i>
+        <span id="userName">User</span>
+        <i class="fa-solid fa-chevron-down" style="font-size:10px;color:var(--muted)"></i>
+      </button>
+      <div id="userDropdown" style="position:absolute;top:100%;right:0;margin-top:8px;background:var(--card-bg);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:200px;display:none;z-index:1000">
+        <div style="padding:12px 14px;border-bottom:1px solid var(--line)">
+          <div style="font-size:13px;font-weight:600;color:var(--ink)" id="userEmail">user@email.com</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px" id="userRole">Member</div>
+        </div>
+        <button id="logoutBtn" style="width:100%;padding:10px 14px;background:none;border:none;cursor:pointer;color:var(--red);font-size:13px;font-weight:600;text-align:left;display:flex;align-items:center;gap:8px">
+          <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+        </button>
+      </div>
+    </div>
     <span class="status-pill" id="statusPill"><span class="dot"></span><span id="statusPillText">Checking…</span></span>
     <button class="nav-btn hidden" id="changeKeyBtn" title="Change API key"><i class="fa-solid fa-key"></i> Key</button>
   </nav>
@@ -1642,6 +1659,85 @@
         </div>
       </div>
 
+      <!-- ============ PAGE: users ============ -->
+      <div class="page" id="page-users">
+        <div class="card">
+          <div class="card-head">
+            <i class="fa-solid fa-user-shield"></i> User Management
+            <span class="right" id="usersRefreshed">Manage users and teams</span>
+          </div>
+          <div class="card-body">
+            <div class="alert okay" id="usersInfo" style="margin-bottom:16px">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>View and manage all users on the platform. As a team owner/admin, you can manage your team members below.</span>
+            </div>
+            
+            <!-- Team Members Section -->
+            <div style="margin-bottom:24px">
+              <h3 style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:12px">
+                <i class="fa-solid fa-users" style="color:var(--blue)"></i> Your Team Members
+              </h3>
+              <div style="display:flex;gap:10px;margin-bottom:14px;align-items:end;flex-wrap:wrap">
+                <div class="field" style="margin:0;flex:1;min-width:200px">
+                  <label>Member Email</label>
+                  <input type="email" id="inviteEmail" placeholder="user@company.com">
+                </div>
+                <div class="field" style="margin:0;min-width:150px">
+                  <label>Role</label>
+                  <select id="inviteRole" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;color:var(--ink);background:var(--input-bg)">
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </div>
+                <button class="btn" id="inviteBtn" style="margin-bottom:1px"><i class="fa-solid fa-user-plus"></i> Invite</button>
+              </div>
+              <div style="overflow-x:auto">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Joined</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="teamMembersBody">
+                    <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Loading team members…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Super Admin: All Users Section (only visible to super admin) -->
+            <div id="superAdminSection" style="display:none">
+              <hr style="border:none;border-top:1px solid var(--line);margin:24px 0">
+              <h3 style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:12px">
+                <i class="fa-solid fa-shield-halved" style="color:var(--amber)"></i> Platform Users (Super Admin)
+              </h3>
+              <div style="overflow-x:auto">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Teams</th>
+                      <th>Created</th>
+                      <th>Last Login</th>
+                    </tr>
+                  </thead>
+                  <tbody id="allUsersBody">
+                    <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Loading all users…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </section>
 
   </main>
@@ -1718,6 +1814,28 @@
 </div>
 
 <script>
+  // Auth guard - redirect to login if not authenticated
+  (function() {
+    const user = localStorage.getItem('wapi_user');
+    const apiKey = localStorage.getItem('wapi_key');
+    
+    // Allow access if user has stored credentials
+    if (!user || !apiKey) {
+      window.location.href = '/login';
+      return;
+    }
+    
+    try {
+      const userData = JSON.parse(user);
+      window.CURRENT_USER = userData;
+      window.CURRENT_API_KEY = apiKey;
+    } catch (e) {
+      localStorage.removeItem('wapi_user');
+      localStorage.removeItem('wapi_key');
+      window.location.href = '/login';
+    }
+  })();
+  
   // tiny helpers
   const $ = id => document.getElementById(id);
   const show = el => el.classList.remove('hidden');
@@ -1753,7 +1871,8 @@
     keys:      { icon: 'fa-key',              title: 'API Keys' },
     settings:  { icon: 'fa-gear',             title: 'Settings' },
     team:      { icon: 'fa-users',            title: 'Team' },
-    billing:   { icon: 'fa-credit-card',      title: 'Billing' }
+    billing:   { icon: 'fa-credit-card',      title: 'Billing' },
+    users:     { icon: 'fa-user-shield',      title: 'Users' }
   };
 
   let showPage = name => {
@@ -1766,6 +1885,7 @@
     if (name === 'docs' && !apiBuilt) buildDocs();
     if (name === 'queue') startQueuePoll(); else stopQueuePoll();
     if (name === 'campaigns') startCampaignPoll(); else stopCampaignPoll();
+    if (name === 'users') loadUsersPage();
     window.scrollTo({ top: 0 });
   };
 
@@ -2395,6 +2515,34 @@
     $('darkIcon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
     localStorage.setItem('wapi_dark', isDark ? '1' : '0');
   };
+  
+  // User menu and logout
+  if (window.CURRENT_USER) {
+    $('userMenu').style.display = 'block';
+    $('userName').textContent = window.CURRENT_USER.name || 'User';
+    $('userEmail').textContent = window.CURRENT_USER.email || '';
+    $('userRole').textContent = 'Team Member';
+    
+    $('userMenuBtn').onclick = (e) => {
+      e.stopPropagation();
+      $('userDropdown').style.display = $('userDropdown').style.display === 'none' ? 'block' : 'none';
+    };
+    
+    $('logoutBtn').onclick = () => {
+      if (confirm('Sign out and return to login page?')) {
+        localStorage.removeItem('wapi_user');
+        localStorage.removeItem('wapi_key');
+        window.location.href = '/login';
+      }
+    };
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!$('userMenu').contains(e.target)) {
+        $('userDropdown').style.display = 'none';
+      }
+    });
+  }
 
   // ---- modal ----
   const showModal = (icon, title, html) => {
@@ -2497,12 +2645,13 @@
       $('campEstimate').textContent = estimateStr;
 
       // Show confirmation modal
+      const timeDisplay = estimateStr.split('~')[1]?.trim() || estimateStr;
       showModal('fa-rocket', 'Confirm Campaign',
         '<div style="margin-bottom:16px">' +
         '<p style="margin-bottom:12px;font-size:14px;color:var(--ink)"><strong>' + esc(name) + '</strong></p>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">' +
         '<div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--blue)">' + lines + '</div><div style="color:var(--muted);font-size:11px">Contacts</div></div>' +
-        '<div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">' + estimateStr.split('~')[1]?.trim() || estimateStr + '</div><div style="color:var(--muted);font-size:11px">Est. Time</div></div>' +
+        '<div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">' + timeDisplay + '</div><div style="color:var(--muted);font-size:11px">Est. Time</div></div>' +
         '</div>' +
         '<div style="margin-top:12px;font-size:12px;color:var(--muted);background:var(--amber-soft);padding:10px 12px;border-radius:8px"><i class="fa-solid fa-shield-halved"></i> Anti-ban delay ' + delayMin + '–' + delayMax + 'ms · one-by-one</div>' +
         '</div>' +
@@ -2512,40 +2661,50 @@
         '</div>'
       );
 
-      document.getElementById('confirmCampBtn').onclick = async () => {
-        closeModal();
-        $('campResult').innerHTML = '<div class="alert okay show"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Campaign starting…</span></div>';
+      // Use setTimeout to ensure DOM is updated before attaching handlers
+      setTimeout(() => {
+        const confirmBtn = document.getElementById('confirmCampBtn');
+        const cancelBtn = document.getElementById('cancelCampBtn');
+        
+        if (confirmBtn) {
+          confirmBtn.onclick = async () => {
+            closeModal();
+            $('campResult').innerHTML = '<div class="alert okay show"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Campaign starting…</span></div>';
 
-        // Create form data and send to campaign dashboard
-        const form = new FormData();
-        form.append('name', name);
-        form.append('message', message);
-        form.append('delayMin', delayMin);
-        form.append('delayMax', delayMax);
-        form.append('file', fileInput.files[0]);
+            // Create form data and send to campaign dashboard
+            const form = new FormData();
+            form.append('name', name);
+            form.append('message', message);
+            form.append('delayMin', delayMin);
+            form.append('delayMax', delayMax);
+            form.append('file', fileInput.files[0]);
 
-        try {
-          // Try sending to the campaign dashboard on port 4000
-          const campRes = await fetch('/start', { method: 'POST', body: form });
-          if (campRes.ok) {
-            toast('Campaign "' + name + '" launched!', 'success');
-            $('campResult').innerHTML = '<div class="alert okay show"><i class="fa-solid fa-circle-check"></i><span>✅ Campaign started! Check <a href=":4000" target="_blank" style="color:var(--blue);text-decoration:underline">Campaign Dashboard (port 4000)</a> for live progress.</span></div>';
-            $('campName').value = '';
-            $('campMsg').value = '';
-            $('campFile').value = '';
-            $('campEstimate').textContent = '';
-          } else {
-            const err = await campRes.json().catch(() => ({ error: 'Could not reach campaign server.' }));
-            toast(err.error || 'Launch failed.', 'error');
-            $('campResult').innerHTML = '<div class="alert error show"><i class="fa-solid fa-circle-exclamation"></i><span>' + esc(err.error || 'Failed to launch campaign. Ensure the Campaign Dashboard (port 4000) is running.') + '</span></div>';
-          }
-        } catch {
-          toast('Could not connect to campaign server on port 4000.', 'error');
-          $('campResult').innerHTML = '<div class="alert error show"><i class="fa-solid fa-circle-exclamation"></i><span>Cannot reach the Campaign Dashboard. Ensure it is running on port 4000. You can also launch campaigns directly from <a href=":4000/campaigns" target="_blank" style="color:var(--blue);text-decoration:underline">port 4000/campaigns</a>.</span></div>';
+            try {
+              // Send to the campaign dashboard public API on port 4000
+              const campRes = await fetch('http://127.0.0.1:4000/api/campaign/launch', { method: 'POST', body: form });
+              if (campRes.ok) {
+                toast('Campaign "' + name + '" launched!', 'success');
+                $('campResult').innerHTML = '<div class="alert okay show"><i class="fa-solid fa-circle-check"></i><span>✅ Campaign started! Check <a href="http://127.0.0.1:4000" target="_blank" style="color:var(--blue);text-decoration:underline">Campaign Dashboard (port 4000)</a> for live progress.</span></div>';
+                $('campName').value = '';
+                $('campMsg').value = '';
+                $('campFile').value = '';
+                $('campEstimate').textContent = '';
+              } else {
+                const err = await campRes.json().catch(() => ({ error: 'Could not reach campaign server.' }));
+                toast(err.error || 'Launch failed.', 'error');
+                $('campResult').innerHTML = '<div class="alert error show"><i class="fa-solid fa-circle-exclamation"></i><span>' + esc(err.error || 'Failed to launch campaign. Ensure the Campaign Dashboard (port 4000) is running.') + '</span></div>';
+              }
+            } catch {
+              toast('Could not connect to campaign server on port 4000.', 'error');
+              $('campResult').innerHTML = '<div class="alert error show"><i class="fa-solid fa-circle-exclamation"></i><span>Cannot reach the Campaign Dashboard. Ensure it is running on port 4000. You can also launch campaigns directly from <a href="http://127.0.0.1:4000/campaigns" target="_blank" style="color:var(--blue);text-decoration:underline">port 4000/campaigns</a>.</span></div>';
+            }
+          };
         }
-      };
 
-      document.getElementById('cancelCampBtn').onclick = closeModal;
+        if (cancelBtn) {
+          cancelBtn.onclick = closeModal;
+        }
+      }, 0);
     };
     reader.readAsText(fileInput.files[0]);
   };
@@ -3119,27 +3278,99 @@
     } catch { /* AUTH handled in api() */ }
   };
 
-  // ---- Invite ----
-  $('inviteBtn').onclick = async () => {
-    const email = $('inviteEmail').value.trim();
-    const role = $('inviteRole').value;
-    if (!email) { toast('Enter an email address.', 'warning'); return; }
-    const btn = $('inviteBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i> Sending…';
+  // ---- Users Page ----
+  const loadUsersPage = async () => {
+    // Load team members (for all users)
     try {
-      const { res, json } = await api('/api/team/invite', { method: 'POST', body: JSON.stringify({ email, role }) });
-      if (!res.ok || !json.success) {
-        $('inviteResult').innerHTML = '<div class="alert error show" style="margin-top:10px"><i class="fa-solid fa-circle-exclamation"></i><span>' + esc(json.error || 'Invite failed.') + '</span></div>';
-        return;
+      const { res, json } = await api('/api/team/members');
+      if (res.ok && json.success) {
+        const members = json.data.members || [];
+        const role = teamData?.myRole || '';
+        const canManage = role === 'owner' || role === 'admin';
+        
+        $('teamMembersBody').innerHTML = members.length ? members.map(m =>
+          '<tr>' +
+            '<td>' + esc(m.name || '—') + '</td>' +
+            '<td>' + esc(m.email) + '</td>' +
+            '<td><span class="team-role-badge ' + (m.role || 'member') + '">' + esc(m.role || 'member') + '</span></td>' +
+            '<td style="font-size:11.5px;color:var(--muted)">' + (m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : '—') + '</td>' +
+            '<td>' + (canManage && m.role !== 'owner' ?
+              '<button class="team-btn danger" data-remove="' + m.id + '" title="Remove from team"><i class="fa-solid fa-user-minus"></i></button>' : '') + '</td>' +
+          '</tr>'
+        ).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">No team members found.</td></tr>';
+        
+        // Show invite form only for owners/admins
+        const inviteForm = $('inviteBtn')?.parentElement;
+        if (inviteForm) {
+          inviteForm.style.display = canManage ? 'flex' : 'none';
+        }
       }
-      $('inviteEmail').value = '';
-      toast('Invitation sent to ' + email + '.', 'success');
-      $('inviteResult').innerHTML = '';
-    } catch { /* AUTH */ }
-    finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Invite'; }
+    } catch { /* AUTH handled in api() */ }
+
+    // Check if user is super admin (check if API key name contains "Super Admin")
+    const isSuperAdmin = window.CURRENT_USER?.email === 'superadmin@platform.local';
+    if (isSuperAdmin) {
+      $('superAdminSection').style.display = 'block';
+      try {
+        const { res, json } = await api('/api/super-admin/users');
+        if (res.ok && json.success) {
+          const users = json.data.users || [];
+          $('allUsersBody').innerHTML = users.length ? users.map(u =>
+            '<tr>' +
+              '<td>' + esc(u.name || '—') + '</td>' +
+              '<td>' + esc(u.email) + '</td>' +
+              '<td>' + (u.team_count || 0) + '</td>' +
+              '<td style="font-size:11.5px;color:var(--muted)">' + (u.created_at ? new Date(u.created_at).toLocaleDateString() : '—') + '</td>' +
+              '<td style="font-size:11.5px;color:var(--muted)">' + (u.last_login_at ? new Date(u.last_login_at).toLocaleString() : 'Never') + '</td>' +
+            '</tr>'
+          ).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">No users found.</td></tr>';
+        }
+      } catch { /* AUTH handled in api() */ }
+    } else {
+      $('superAdminSection').style.display = 'none';
+    }
   };
 
+  // Invite member button handler
+  $('inviteBtn')?.addEventListener('click', async () => {
+    const email = $('inviteEmail')?.value?.trim();
+    const role = $('inviteRole')?.value || 'member';
+    
+    if (!email) {
+      alert('Please enter an email address');
+      return;
+    }
+    
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+    
+    $('inviteBtn').disabled = true;
+    $('inviteBtn').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Inviting...';
+    
+    try {
+      const { res, json } = await api('/api/team/invite', {
+        method: 'POST',
+        body: JSON.stringify({ email, role })
+      });
+      
+      if (res.ok && json.success) {
+        alert('✓ Invite sent to ' + email);
+        $('inviteEmail').value = '';
+        loadUsersPage(); // Refresh the list
+      } else {
+        alert('Failed: ' + (json.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Error: ' + err.message);
+    } finally {
+      $('inviteBtn').disabled = false;
+      $('inviteBtn').innerHTML = '<i class="fa-solid fa-user-plus"></i> Invite';
+    }
+  });
+
+  // ---- Invite ----
   // ---- Role management (delegated) ----
   document.addEventListener('click', async e => {
     const promoteBtn = e.target.closest('[data-promote]');

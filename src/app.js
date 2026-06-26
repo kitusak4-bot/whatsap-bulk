@@ -27,6 +27,7 @@ import { createContactRouter } from './routes/contacts.js'
 import { createABTestRouter } from './routes/ab-testing.js'
 import { createBrandingRouter } from './routes/branding.js'
 import { createReportingRouter } from './routes/reporting.js'
+import { createSuperAdminRouter } from './routes/super-admin.js'
 import { enforceQuota } from './middleware/quota.js'
 import { createMessagingRouter } from './routes/messaging.js'
 import { createWhatsAppRouter } from './routes/whatsapp.js'
@@ -56,7 +57,7 @@ const limiter = ({ windowMs, limit, keyGenerator, skip }) => rateLimit({
   }
 })
 
-export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp, users, teams, audit, billing, webhooks, scheduler, contacts, abTests, branding, queue, rateLimiter, reports, backup }) => {
+export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp, users, teams, audit, billing, webhooks, scheduler, contacts, abTests, branding, queue, rateLimiter, reports, backup, superAdmin }) => {
   const app = express()
   app.disable('x-powered-by')
   app.set('trust proxy', cfg.trustProxy)
@@ -72,9 +73,14 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp, users, teams, 
     app.use(getSentry().Handlers.requestHandler())
   }
 
-  // Serve landing page at root
+  // Serve landing page at root - redirect to login
   app.get('/', (req, res) => {
-    res.sendFile(path.join(publicDir, 'landing.html'))
+    res.sendFile(path.join(publicDir, 'login.html'))
+  })
+
+  // Serve login page
+  app.get('/login', (req, res) => {
+    res.sendFile(path.join(publicDir, 'login.html'))
   })
 
   // Serve the SPA dashboard at /dashboard
@@ -214,6 +220,11 @@ export const createApp = ({ cfg, logger, logs, apiKeys, whatsapp, users, teams, 
     port: cfg.port || null
   })))
   app.use('/api/admin', createAdminRouter(apiKeys))
+  
+  // Super admin routes (requires admin API key)
+  if (superAdmin) {
+    app.use('/api/super-admin', createSuperAdminRouter({ superAdmin, audit }))
+  }
   app.use('/api', createWhatsAppRouter(whatsapp))
   app.get('/api/campaigns/recent', asyncHandler(async (req, res) => {
     const campaignDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'campaigns')

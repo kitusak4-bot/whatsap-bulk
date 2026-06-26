@@ -184,6 +184,56 @@ app.get("/api/campaigns/recent", requireAuth, (req, res) => {
   res.json({ success: true, data: { totalCampaigns: stats.totalCampaigns, reports: list } });
 });
 
+// Public API endpoint for cross-origin campaign launch from main dashboard (port 3000)
+// Handle CORS preflight (OPTIONS request)
+app.options("/api/campaign/launch", (req, res) => {
+  res.set("Access-Control-Allow-Origin", req.get("Origin") || "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  res.set("Access-Control-Max-Age", "86400"); // 24 hours
+  res.sendStatus(200);
+});
+
+app.post("/api/campaign/launch", (req, res, next) => {
+  // Set CORS headers for actual POST request
+  res.set("Access-Control-Allow-Origin", req.get("Origin") || "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  next();
+}, upload.single("file"), (req, res) => {
+  const { name, message, delayMin, delayMax } = req.body || {};
+
+  if (!name || !message) {
+    return res.status(400).json({ success: false, error: "Campaign name and message are required" });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ success: false, error: "CSV file with contacts is required" });
+  }
+
+  const config = {
+    name,
+    message,
+    delayMin: Number(delayMin) || 5000,
+    delayMax: Number(delayMax) || 8000,
+  };
+  fs.writeFileSync(path.join(CAMPAIGNS_DIR, "campaign.json"), JSON.stringify(config, null, 2));
+
+  // Save uploaded CSV as contacts.csv
+  const dest = path.join(CAMPAIGNS_DIR, "contacts.csv");
+  if (fs.existsSync(dest)) fs.unlinkSync(dest);
+  fs.renameSync(req.file.path, dest);
+
+  const proc = spawn("node", ["campaigns/worker.js"], {
+    cwd: path.resolve("."),
+    stdio: "pipe",
+  });
+  proc.stdout.on("data", (d) => console.log(`[WORKER] ${d}`));
+  proc.stderr.on("data", (d) => console.error(`[ERROR] ${d}`));
+
+  res.json({ success: true, message: "Campaign started", campaignName: name });
+});
+
 /* ═══════════════════════════════════════════════
    ROUTES — Pages (protected)
    ═══════════════════════════════════════════════ */
